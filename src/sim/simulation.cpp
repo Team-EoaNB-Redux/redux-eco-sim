@@ -34,6 +34,7 @@ bool Simulation::load(const std::string& mod_root, const std::string& scenario_p
 
     loader::load_mod_data(mod_root, *interp_, data_);
     loader::load_localisation(mod_root, world_.localisation);
+    if (!scenario_.history_dir.empty()) loader::load_localisation(scenario_.history_dir, world_.localisation);
     interp_->hooks.is_token = [this](Sym s) { return data_.tokens.count(s) != 0; };
 
     mods_ = std::make_unique<ModifierEngine>(data_, world_, *interp_);
@@ -54,7 +55,7 @@ bool Simulation::load(const std::string& mod_root, const std::string& scenario_p
     world_.rng.reseed(scenario_.seed);
     start_ordinal_ = world_.date.ordinal();
 
-    loader::prescan_history(*interp_, mod_root, scenario_.start_date, prescan_);
+    loader::prescan_history(*interp_, mod_root, scenario_.start_date, prescan_, scenario_.history_dir);
     const auto selected = loader::select_countries(scenario_, prescan_);
     loader::StateSetup setup;
     setup.only_states.insert(scenario_.states.begin(), scenario_.states.end());

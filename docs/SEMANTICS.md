@@ -48,6 +48,7 @@ VERIFIED with an in-game probe (see Calibration).
 | `country_is_at_peace` / `_at_war` static modifiers applied by the engine | modelled | supply base confidence/incentives values |
 | `modifier@x` = ideas + techs + static + dynamic (country); category + dynamic (state) | modelled | tech modifiers are the numeric keys directly in the tech body (`tax_efficiency_factor = 0.02`) plus any `modifier = {}` block |
 | `resource@r`, `resource_produced@r`, `resource_consumed@r` | APPROX | produced = Σ controlled states' resources; `country_resource_cost_<r>` < 0 is a gain; production-line use = scenario engine value `resource_consumed_<r>` (default 0) |
+| History: `controller = X` with no owner → X owns the state, without a core | VERIFIED (Strat) | e.g. 391 Minnesota (USA) before 1870 |
 | `controller` / `owner` | modelled | state: built-in link; country: the eco's own `controller` variable, else self |
 | No tick at start (on_startup only); 1857 bookmark starts 1857.5.11 | VERIFIED (Strat) | monthly on day 1, weekly every 7 days from start: KNOB |
 | Event option choice | modelled | `ai_chance` weights via seeded RNG; `player_event_choice = first_option` |

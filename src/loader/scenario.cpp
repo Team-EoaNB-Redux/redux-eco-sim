@@ -4,6 +4,7 @@
 #include "pdx/parser.h"
 
 #include <cstdlib>
+#include <filesystem>
 
 namespace loader {
 
@@ -132,6 +133,14 @@ bool load_scenario(const std::string& path, Scenario& out, std::string& error) {
             auto& dst = k == "pins" ? out.pins : out.overrides;
             for (const Node* o = f.begin(*c); o != f.end(*c); ++o) {
                 if (o->key != pdx::kNoSym && !o->is_block) dst.emplace_back(sym_str(o->key), sym_str(o->value));
+            }
+        } else if (k == "history") {
+            std::filesystem::path h(sym_str(c->value));
+            if (h.is_relative()) h = std::filesystem::path(path).parent_path() / h;
+            out.history_dir = h.lexically_normal().string();
+            if (!std::filesystem::is_directory(out.history_dir)) {
+                error = path + ": history folder not found: " + out.history_dir;
+                return false;
             }
         } else if (k == "states") {
             for (const auto& t : strings(f, *c)) out.states.push_back(std::atoi(t.c_str()));

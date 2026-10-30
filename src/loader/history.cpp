@@ -110,9 +110,16 @@ void run_history_block(pdx::Interp& in, world::World& w, const ScriptFile& f, co
 
 } // namespace
 
-void prescan_history(pdx::Interp& in, const std::string& root, const world::Date& start, HistoryPrescan& out) {
-    for (const auto& path : list_files(root, "history/countries")) {
-        const ScriptFile* f = load_script(in, root, path);
+namespace {
+void prescan_states(pdx::Interp& in, const std::string& root, const world::Date& start, HistoryPrescan& out,
+                    Sym only_owner);
+}
+
+void prescan_history(pdx::Interp& in, const std::string& root, const world::Date& start, HistoryPrescan& out,
+                     const std::string& history_root) {
+    const std::string& hroot = history_root.empty() ? root : history_root;
+    for (const auto& path : list_files(hroot, "history/countries")) {
+        const ScriptFile* f = load_script(in, hroot, path);
         if (!f) continue;
         std::string name = std::filesystem::path(path).filename().string();
         const Sym tag = intern(name.substr(0, std::min<size_t>(3, name.size())));
@@ -122,6 +129,19 @@ void prescan_history(pdx::Interp& in, const std::string& root, const world::Date
         for (const Node* n : entries) scan_country(*f, n, n + 1, info);
         out.countries[tag] = std::move(info);
     }
+    prescan_states(in, hroot, start, out, pdx::kNoSym);
+    if (hroot != root) {
+        const Sym uct = intern("UCT");
+        bool has_uct = false;
+        for (const auto& [id, st] : out.states) has_uct = has_uct || st.owner == uct;
+        if (!has_uct) prescan_states(in, root, start, out, uct);
+    }
+    load_definition_csv(root, out);
+}
+
+namespace {
+void prescan_states(pdx::Interp& in, const std::string& root, const world::Date& start, HistoryPrescan& out,
+                    Sym only_owner) {
     for (const auto& path : list_files(root, "history/states")) {
         const ScriptFile* f = load_script(in, root, path);
         if (!f) continue;
@@ -140,11 +160,13 @@ void prescan_history(pdx::Interp& in, const std::string& root, const world::Date
                     }
                 }
             }
-            if (id > 0) out.states[id] = info;
+            // In-game, a state with a controller but no owner is owned by the controller (without a core).
+            if (info.owner == pdx::kNoSym) info.owner = info.controller;
+            if (id > 0 && (only_owner == pdx::kNoSym || info.owner == only_owner) && !out.states.count(id)) out.states[id] = info;
         }
     }
-    load_definition_csv(root, out);
 }
+} // namespace
 
 std::unordered_set<Sym> select_countries(const Scenario& sc, const HistoryPrescan& p) {
     std::unordered_set<Sym> sel(sc.countries.begin(), sc.countries.end());
@@ -247,6 +269,7 @@ void apply_history(pdx::Interp& in, world::World& w, const ModData& d, const His
             st.owner = st.controller = ci;
             st.cores.assign(1, ci);
         }
+        if (st.owner < 0) st.owner = st.controller; // controller without owner: owned, but no core
         if (st.controller < 0) st.controller = st.owner;
         loaded.push_back(id);
     }

@@ -37,7 +37,10 @@ struct HistoryPrescan {
     std::unordered_map<int32_t, bool> coastal_provinces;
 };
 
-void prescan_history(pdx::Interp& in, const std::string& root, const world::Date& start, HistoryPrescan& out);
+// `history_root` holds history/countries + history/states (default: the mod root). With a custom folder that
+// gives UCT no state, the mod's own UCT states are added (UCT must exist: it hosts the eco ticks).
+void prescan_history(pdx::Interp& in, const std::string& root, const world::Date& start, HistoryPrescan& out,
+                     const std::string& history_root = "");
 
 // Scenario tag selection: listed tags (+UCT), then subjects (2 levels), then market members.
 std::unordered_set<Sym> select_countries(const Scenario& sc, const HistoryPrescan& p);

@@ -49,6 +49,7 @@ Godot 4.5.1: `C:\Users\white\Documents\Godot\Godot_v4.5.1-stable_win64_console.e
    partners and 0.05 s/month. It uses the scenario keys `states = { ... }` and `state_owner = ENG`; UCT's own
    states always load, because UCT hosts the ticks. As of 2026-10-30 it collapses within a year: food starts
    at its price cap without imports.
+   Fantasy history sets: scenario key `history = "../fantasy/<name>"` replaces toi/history (see fantasy/README.md).
 5. Game parity (debug effects in `toi/common/scripted_effects/_economy_sim_probes.txt`): after Strat runs
    `effect eco_sim_parity_dump = yes` / `effect eco_sim_probes = yes` in-game, `bin\ecosim_cli.exe parity`
    and `bin\ecosim_cli.exe calibrate` diff game.log against the sim. Fix the largest early divergence first.

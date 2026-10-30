@@ -13,6 +13,7 @@
 //     events = { "00_economy.txt" }
 //     skip_effects = { econ_rerender_gdp_graph ... }
 //     overrides = { global.wage_change_cap = 0.02  ENG.treasury = 1000 }   # applied after startup
+//     history = "../fantasy/british_isles"   # own history/countries + history/states (relative to this file)
 //     states = { 952 128 }  state_owner = ENG   # fantasy setup: only these states, all owned by ENG
 //     pins = { ENG.trade@token:food = 5571 }   # held for the whole run: script writes keep this value
 //     engine = { ENG = { manpower_k = 500 } }                                # unmodelled engine values
@@ -46,6 +47,7 @@ struct Scenario {
     std::vector<pdx::Sym> skip_effects;
     std::vector<std::pair<std::string, std::string>> overrides; // "ENG.treasury" -> "1000"
     std::vector<std::pair<std::string, std::string>> pins;      // same form; applied before on_startup
+    std::string history_dir;              // fantasy setup: folder with history/countries + history/states
     std::vector<int32_t> states;          // fantasy setup: load exactly these state ids
     pdx::Sym state_owner = pdx::kNoSym;   // fantasy setup: every loaded state belongs to this tag
     struct ScopedValues {
