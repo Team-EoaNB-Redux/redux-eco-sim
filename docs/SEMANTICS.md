@@ -48,6 +48,8 @@ VERIFIED with an in-game probe (see Calibration).
 |---|---|---|
 | Dynamic-modifier variable values re-read daily and on `force_update_dynamic_modifier` | VERIFIED | one-day lag reproduced |
 | `country_is_at_peace` / `_at_war` static modifiers applied by the engine | modelled | supply base confidence/incentives values |
+| `stability_good_modifier` scales 0..1 over stability 50..100%, `stability_bad_modifier` over 50..0% | VERIFIED (parity) | consumer confidence matches in-game; gives throughput, capacity and confidence |
+| Stability value | scenario `engine = { ENG = { stability = x } }` | not simulated: held fixed; default 0.5 (both modifiers off). ENG 0.7165 is backed out of in-game confidence |
 | `modifier@x` = ideas + techs + static + dynamic (country); category + dynamic (state) | modelled | tech modifiers are the numeric keys directly in the tech body (`tax_efficiency_factor = 0.02`) plus any `modifier = {}` block |
 | `resource@r`, `resource_produced@r`, `resource_consumed@r` | APPROX | produced = Σ controlled states' resources; `country_resource_cost_<r>` < 0 is a gain; production-line use = scenario engine value `resource_consumed_<r>` (default 0) |
 | History: `controller = X` with no owner → X owns the state, without a core | VERIFIED (Strat) | e.g. 391 Minnesota (USA) before 1870 |
@@ -63,5 +65,6 @@ VERIFIED with an in-game probe (see Calibration).
 - `effect eco_sim_probes = yes` in-game → `bin\ecosim_cli.exe calibrate` (30 probes, table with meanings).
 - `effect eco_sim_parity_dump = yes` in-game → `bin\ecosim_cli.exe parity` (~1240 values: ENG country +
   market, London/West Midlands industries/pops/resources, every ENG state), sorted by largest difference.
-  A second dump after the first monthly tick: `parity --dump 2 --months 1`.
+  A second dump after the first monthly tick: `parity --dump 2 --months 1`. Use the country you played as
+  `players = { TAG }` in the scenario: otherwise `ai_budget` runs for it and taxes, tariffs and trade diverge.
 Both read Documents/Paradox Interactive/Hearts of Iron IV/logs/game.log by default.

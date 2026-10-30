@@ -68,7 +68,10 @@ bool Simulation::load(const std::string& mod_root, const std::string& scenario_p
     for (const auto& sv : scenario_.engine) {
         world::Country* c = world_.country(world_.country_index(sv.tag));
         if (!c) continue;
-        for (const auto& [k, v] : sv.values) pdx::Fixed::parse(v, c->engine[k]);
+        for (const auto& [k, v] : sv.values) {
+            if (pdx::sym_view(k) == "stability") pdx::Fixed::parse(v, c->stability); // a modelled stat, not a lookup
+            else pdx::Fixed::parse(v, c->engine[k]);
+        }
     }
     for (const auto& sv : scenario_.units) {
         world::Country* c = world_.country(world_.country_index(sv.tag));

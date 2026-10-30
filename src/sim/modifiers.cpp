@@ -34,6 +34,23 @@ void ModifierEngine::for_static_sources(ScopeRef s, F&& fn) {
         const Sym stat = co->at_war_with.empty() ? s_peace : s_war;
         auto it = d_.static_modifiers.find(stat);
         if (it != d_.static_modifiers.end()) fn("static " + pdx::sym_str(stat), it->second);
+
+        // Engine: stability_good_modifier scales 0..1 over stability 50..100%, stability_bad_modifier over 50..0%.
+        static const Sym s_good = pdx::intern("stability_good_modifier"), s_bad = pdx::intern("stability_bad_modifier");
+        const pdx::Semantics& sem = in_.semantics();
+        pdx::OpStatus os;
+        const Fixed half = Fixed::from_raw(Fixed::SCALE / 2);
+        const Fixed over = Fixed::sub(co->stability, half, sem, os);
+        if (!over.is_zero()) {
+            const bool good = over > Fixed{};
+            auto sm = d_.static_modifiers.find(good ? s_good : s_bad);
+            if (sm != d_.static_modifiers.end()) {
+                const Fixed scale = Fixed::mul(good ? over : Fixed::neg(over, sem, os), Fixed::from_int(2), sem, os);
+                std::vector<loader::ModEntry> scaled = sm->second;
+                for (auto& e : scaled) e.value = Fixed::mul(e.value, scale, sem, os);
+                fn("static " + pdx::sym_str(good ? s_good : s_bad), scaled);
+            }
+        }
     } else if (s.is_state()) {
         const world::State* st = w_.state(s.id);
         if (!st) return;

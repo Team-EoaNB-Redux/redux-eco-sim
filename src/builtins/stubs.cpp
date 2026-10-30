@@ -129,6 +129,7 @@ struct SetStat : EffectOp {
         if (v < Fixed{}) v = Fixed{};
         if (v > Fixed::from_int(1)) v = Fixed::from_int(1);
         (war_support ? co->war_support : co->stability) = v;
+        if (!war_support && c.in.hooks.modifiers_dirty) c.in.hooks.modifiers_dirty(c.self());
     }
 };
 

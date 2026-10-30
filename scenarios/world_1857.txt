@@ -23,5 +23,6 @@ scenario = {
 	overrides = { }
 
 	# Deployed manpower at the 1857 bookmark (in-game; feeds military_payroll_spending). No OOB import yet.
-	engine = { ENG = { deployed_army_manpower_k = 108.1 deployed_navy_manpower_k = 119.7 garrison_manpower_need = 57500 } }
+	# Stability backed out of in-game consumer confidence (108.66 = 100 + 20 x the stability_good scale); held fixed.
+	engine = { ENG = { deployed_army_manpower_k = 108.1 deployed_navy_manpower_k = 119.7 garrison_manpower_need = 57500 stability = 0.7165 } }
 }

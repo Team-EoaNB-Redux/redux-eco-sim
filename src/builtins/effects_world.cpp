@@ -220,7 +220,10 @@ struct StatEffect : EffectOp {
         const Fixed one = Fixed::from_int(1);
         auto clamp01 = [&](Fixed v) { return v < Fixed{} ? Fixed{} : (v > one ? one : v); };
         switch (stat) {
-        case Stat::Stability: co->stability = clamp01(c.in.arith(c, '+', co->stability, a, loc)); break;
+        case Stat::Stability:
+            co->stability = clamp01(c.in.arith(c, '+', co->stability, a, loc));
+            if (c.in.hooks.modifiers_dirty) c.in.hooks.modifiers_dirty(c.self());
+            break;
         case Stat::WarSupport: co->war_support = clamp01(c.in.arith(c, '+', co->war_support, a, loc)); break;
         case Stat::PoliticalPower: co->political_power = c.in.arith(c, '+', co->political_power, a, loc); break;
         case Stat::ResearchSlots: co->research_slots += static_cast<int32_t>(a.whole_trunc()); break;
