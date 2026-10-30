@@ -238,7 +238,7 @@ public:
     void slot_set(Ctx& c, const Slot& s, const Value& v, SrcLoc loc);
     // Array addressed by a reference (`arr`, `controller:list@var:x`, `global.arr`). temp = *_temp_array.
     std::vector<Value>* array(Ctx& c, const VarRef& ref, bool temp, bool create, SrcLoc loc);
-    // Elements written past ^num (see VarStore::ghost). clear_array also drops them.
+    // Elements written past ^num (see VarStore::ghost). They survive clear_array (probe ghost_after_clear).
     const Value* find_ghost(Ctx& c, const VarRef& ref, int64_t index, SrcLoc loc);
     void clear_ghosts(Ctx& c, const VarRef& ref, bool temp, SrcLoc loc);
 

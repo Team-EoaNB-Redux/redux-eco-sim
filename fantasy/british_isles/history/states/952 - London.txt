@@ -1,0 +1,39 @@
+state = {
+	id = 952
+	name = "STATE_952" # London
+	manpower = 2712955 # 23,612,371 for all UK w/o later RoI
+	state_category = metropolis
+
+	resources = {
+		# £ 5 K Iron
+		wood = 200
+	}
+
+	provinces = {
+		6103 9239 11333 11374
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_core_of = ENG
+			buildings = {
+				infrastructure = 9
+				industrial_complex = 3
+				arms_factory = 2
+				dockyard = 4
+				11374 = {
+					naval_base = 5
+				}
+			}
+			victory_points = { 6103 50 } # London
+			victory_points = { 9239 5 } # Oxford
+		}
+
+		set_variable = { urban_center_size = 75 }
+		set_variable = { entertainment_hub_size = 20 }
+		set_variable = { railway_size = 6 }
+	}
+	local_supplies = 0.0
+}

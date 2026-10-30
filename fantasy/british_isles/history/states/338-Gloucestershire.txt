@@ -1,0 +1,41 @@
+state = {
+	id = 338
+	name = "STATE_338" # Gloucestershire
+	manpower = 1083618
+
+	local_supplies = 0.0
+	state_category = sparse_urban
+
+	resources = {
+		# £ 100 K Iron
+		# 1.2 M Tons Coal
+		coal = 24
+		iron = 10
+		wood = 17
+	}
+
+	provinces = {
+		3369 6221 6351 6378 9484 11471
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_core_of = ENG
+			buildings = {
+				infrastructure = 7
+				arms_factory = 2
+				industrial_complex = 1
+				dockyard = 1
+				3369 = {
+					naval_base = 4
+				}
+			}
+			victory_points = { 3369 10 } # Bristol
+			set_variable = { consumer_goods_factory_size = 24 }
+			set_variable = { crop_farm_size = 15 }
+			set_variable = { railway_size = 3 }
+		}
+	}
+}

@@ -1,0 +1,35 @@
+state = {
+	id = 125
+	name = "STATE_125" # East Anglia
+	manpower = 916365
+	state_category = sparse_urban
+
+	resources = {
+		wood = 12
+	}
+
+	provinces = {
+		221 271 296 322 3287 11221 11253
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_core_of = ENG
+			buildings = {
+				infrastructure = 7
+				industrial_complex = 1
+				271 = {
+					naval_base = 1
+				}
+			}
+			victory_points = { 322 3 } # Norwich
+			victory_points = { 11253 3 } # Cambridge
+			
+			set_variable = { tooling_workshop_size = 35 }
+			set_variable = { railway_size = 4 }
+		}
+	}
+	local_supplies = 0.0
+}

@@ -168,7 +168,15 @@ Fixed apply_one(Ctx& c, const MathOp& op, Fixed acc) {
     case MK::Add: return in.arith(c, '+', acc, arg(), op.loc);
     case MK::Sub: return in.arith(c, '-', acc, arg(), op.loc);
     case MK::Mul: return in.arith(c, '*', acc, arg(), op.loc);
-    case MK::Div: return in.arith(c, '/', acc, arg(), op.loc);
+    case MK::Div: {
+        const Fixed d = arg();
+        // Unlike divide_variable (0), a math expression gives this constant (probe mathexpr_div_by_zero: 5 / 0)
+        if (d.is_zero() && in.semantics().div_by_zero == DivByZero::Zero) {
+            in.diag(DiagKind::DivByZero, op.loc, "division by zero in a math expression (42949.67295 in-game)");
+            return Fixed::from_raw(4294967295LL);
+        }
+        return in.arith(c, '/', acc, d, op.loc);
+    }
     case MK::Mod: return in.arith(c, '%', acc, arg(), op.loc);
     case MK::Min: { const Fixed a = arg(); return a < acc ? a : acc; }
     case MK::Max: { const Fixed a = arg(); return a > acc ? a : acc; }
@@ -196,16 +204,24 @@ Fixed apply_one(Ctx& c, const MathOp& op, Fixed acc) {
     case MK::Tan: return from_double_trunc(std::tan(acc.to_double()));
     case MK::Atan: return from_double_trunc(std::atan(acc.to_double()));
     case MK::Round: return Fixed::round_half_away(acc);
-    case MK::Clamp:
+    case MK::Clamp: {
+        bool has_min = false, has_max = false;
+        Fixed lo, hi;
         for (const auto& [is_min, bound] : op.bounds) {
             const Fixed b = in.eval(c, bound, op.loc).num;
             if (is_min) {
+                lo = b;
+                has_min = true;
                 acc = acc < b ? b : acc;
             } else {
+                hi = b;
+                has_max = true;
                 acc = acc > b ? b : acc;
             }
         }
+        if (has_min && has_max && lo > hi) return Fixed{}; // probe clamp_max_then_min: 7 clamped to max 5, min 6 = 0
         return acc;
+    }
     case MK::Gt: return b2f(acc > arg());
     case MK::Lt: return b2f(acc < arg());
     case MK::Ge: return b2f(acc >= arg());

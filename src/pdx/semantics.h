@@ -42,7 +42,7 @@ struct Semantics {
     Rounding div_rounding = Rounding::Truncate;
     DivByZero div_by_zero = DivByZero::Zero; // Strat: used to be -0.1, now believed to be 0
     TempPrecedence temp_precedence = TempPrecedence::TempFirst;
-    BareAtTarget bare_at_target = BareAtTarget::TokenIfKnown;
+    BareAtTarget bare_at_target = BareAtTarget::Literal; // probe: a bare @name is never a variable lookup
     // check_variable = { x = 5 }: true -> equality, false -> greater_than_or_equals
     bool check_shorthand_eq_is_equals = true;
     // check_variable shorthand `<=` / `>=`: memory says unsupported in-game. false -> evaluate as false + lint

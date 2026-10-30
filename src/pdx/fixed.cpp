@@ -236,6 +236,17 @@ Fixed Fixed::mul(Fixed a, Fixed b, const Semantics& s, OpStatus& st) {
     if (!detail::muldiv_trunc(a.raw_, b.raw_, SCALE, q, rem)) {
         st.overflow = true;
     }
+    if (s.overflow == OverflowMode::Wrap32) {
+        // In-game the raw product wraps in 64 bits BEFORE dividing by the scale (probe overflow_mul:
+        // 100000 * 100000 = 776627963.14522), so a product above ~922 million already goes wrong.
+        uint64_t hi = 0, lo = 0;
+        detail::umul128(detail::magnitude(a.raw_), detail::magnitude(b.raw_), hi, lo);
+        if (hi != 0 || lo > static_cast<uint64_t>(std::numeric_limits<int64_t>::max())) st.overflow = true;
+        const int64_t wrapped = static_cast<int64_t>(static_cast<uint64_t>(a.raw_) * static_cast<uint64_t>(b.raw_));
+        q = wrapped / SCALE;
+        rem = wrapped % SCALE;
+        if (rem < 0) rem = -rem;
+    }
     q = apply_rounding(q, rem, SCALE, s.mul_rounding);
     return from_raw(normalize(q, s, st));
 }
@@ -271,8 +282,9 @@ Fixed Fixed::mod(Fixed a, Fixed b, const Semantics& s, OpStatus& st) {
         st.div_by_zero = true;
         return s.div_by_zero == DivByZero::Zero ? Fixed{} : a;
     }
+    if (a.raw_ < 0) return a; // in-game a negative value comes back unchanged (probe mod_neg7_3: -7 mod 3 = -7)
     int64_t r = a.raw_ % b.raw_;
-    if (r < 0) r += b.raw_ < 0 ? -b.raw_ : b.raw_; // Euclidean: result is always >= 0
+    if (r < 0) r += b.raw_ < 0 ? -b.raw_ : b.raw_;
     return from_raw(r);
 }
 

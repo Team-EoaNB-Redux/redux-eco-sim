@@ -1,0 +1,43 @@
+state = {
+	id = 133
+	name = "STATE_133" # Lanark
+	manpower = 1037300
+	state_category = sparse_urban
+
+	resources = {
+		# Scotland Total:
+		# £ 26 K Lead
+		# £ 1,750 K Iron
+		# 8.2 M Tons Coal
+		iron = 138
+		coal = 98
+		wood = 12
+	}
+
+	provinces = {
+		3273 6320 6350 6385 6395 9237 9350 11218
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_core_of = ENG
+			buildings = {
+				infrastructure = 6
+				industrial_complex = 1
+				dockyard = 3
+				6395 = {
+					naval_base = 5
+				}
+			}
+			victory_points = { 3273 30 } # Glasgow
+			
+			set_variable = { steel_foundry_size = 4 } # 124 blast furnaces of 628
+			set_variable = { mechanical_works_size = 8 }
+			set_variable = { textile_mill_size = 5 }
+			set_variable = { railway_size = 4 }
+		}
+	}
+	local_supplies = 0.0
+}

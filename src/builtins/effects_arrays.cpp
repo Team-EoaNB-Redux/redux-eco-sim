@@ -132,7 +132,6 @@ struct ClearArray : EffectOp {
     VarRef array;
     void run(Ctx& c) const override {
         if (std::vector<Value>* a = c.in.array(c, array, temp, false, loc)) a->clear();
-        c.in.clear_ghosts(c, array, temp, loc);
     }
 };
 

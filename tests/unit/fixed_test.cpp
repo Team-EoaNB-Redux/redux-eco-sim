@@ -41,7 +41,7 @@ TEST_CASE(fixed_mul_truncates_toward_zero) {
     CHECK_EQ(S(Fixed::mul(F("0.00001"), F("0.5"), s, st)), std::string("0.00000"));
     CHECK_EQ(S(Fixed::mul(F("-0.00001"), F("0.5"), s, st)), std::string("0.00000"));
     CHECK_EQ(S(Fixed::mul(F("1.5"), F("-2.25"), s, st)), std::string("-3.37500"));
-    CHECK_EQ(S(Fixed::mul(F("1000000"), F("1000"), s, st)), std::string("1000000000.00000"));
+    CHECK_EQ(S(Fixed::mul(F("1000000"), F("100"), s, st)), std::string("100000000.00000"));
     CHECK(!st.overflow);
 }
 
@@ -116,6 +116,6 @@ TEST_CASE(fixed_mod) {
     Semantics s;
     OpStatus st;
     CHECK_EQ(S(Fixed::mod(F("7"), F("3"), s, st)), std::string("1.00000"));
-    CHECK_EQ(S(Fixed::mod(F("-7"), F("3"), s, st)), std::string("2.00000")); // Euclidean (wiki)
+    CHECK_EQ(S(Fixed::mod(F("-7"), F("3"), s, st)), std::string("-7.00000")); // probe mod_neg7_3
     CHECK_EQ(S(Fixed::mod(F("5.5"), F("2"), s, st)), std::string("1.50000"));
 }

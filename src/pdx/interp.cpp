@@ -776,7 +776,7 @@ uint32_t Interp::target_code(Ctx& c, const VarRef& ref, SrcLoc l) {
         const bool known_token = hooks.is_token && hooks.is_token(t.sym);
         if (!known_token) {
             diag(DiagKind::AmbiguousAtTarget, l,
-                 "'" + ref.text + "': bare @" + sym_str(t.sym) + " is not a known token (read as a variable)");
+                 "'" + ref.text + "': bare @" + sym_str(t.sym) + " is not a known token (a literal name in-game: it does not read that variable)");
         }
         if (sem_.bare_at_target == BareAtTarget::Literal ||
             (sem_.bare_at_target == BareAtTarget::TokenIfKnown && known_token)) {

@@ -1,0 +1,46 @@
+state = {
+	id = 130
+	name = "STATE_130" # Yorkshire
+	manpower = 2039693
+	state_category = dense_urban
+
+	resources = {
+		# £ 174 K Lead
+		# £ 1,135 K Iron
+		# 8.9 M Tons Coal
+		wood = 300
+		coal = 228
+	}
+
+	provinces = {
+		6268 9269 9315 9332 9379 9397 11297 11317 11382
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_core_of = ENG
+			buildings = {
+				infrastructure = 7
+				industrial_complex = 3
+				arms_factory = 1
+				11297 = {
+					naval_base = 3
+				}
+			}
+			victory_points = { 9269 3 } # York
+			victory_points = { 9315 15 } # Sheffield
+			victory_points = { 9379 15 } # Leeds
+			victory_points = { 11297 5 } # Hull
+			victory_points = { 11382 1 } # Doncaster
+			
+			set_variable = { steel_foundry_size = 3 } # 48 blast furnaces of 628
+			set_variable = { tooling_workshop_size = 25 }
+			set_variable = { consumer_goods_factory_size = 10 }
+			set_variable = { crop_farm_size = 10 }
+			set_variable = { railway_size = 7 }
+		}
+	}
+	local_supplies = 0.0
+}

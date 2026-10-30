@@ -1,0 +1,37 @@
+state = {
+	id = 128
+	name = "STATE_128" # West Midlands
+	manpower = 1585402
+	state_category = dense_urban
+
+	resources = {
+		# £ 176 K Lead
+		# £ 1,417 K Iron
+		# 8.3 M Tons Coal
+		wood = 700
+		fiber = 100
+	}
+
+	provinces = {
+		3241 3301 6270 6301 7239 9297 11345
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_core_of = ENG
+			buildings = {
+				infrastructure = 7
+				arms_factory = 2
+				industrial_complex = 2
+			}
+			victory_points = { 3301 1 } # Shrewsbury
+			victory_points = { 9297 25 } # Birmingham
+			
+			set_variable = { crop_farm_size = 10 }
+			set_variable = { railway_size = 9 }
+		}
+	}
+	local_supplies = 0.0
+}

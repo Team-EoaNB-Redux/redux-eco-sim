@@ -6,6 +6,7 @@ scenario = {
 	start_date = 1857.5.11
 	seed = 12345
 
+	history = "../fantasy/british_isles"
 	countries = { UCT ENG }
 	include_subjects = no
 	include_market_members = no

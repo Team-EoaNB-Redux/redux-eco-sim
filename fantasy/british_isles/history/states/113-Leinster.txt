@@ -1,0 +1,40 @@
+state = {
+	id = 113
+	name = "STATE_113" # Leinster
+	manpower = 2672526 # 4,685,889 for all of RoI
+	state_category = dense_rural
+
+	provinces = {
+		285 303 369 3342 3359 7377 11293 11303
+	}
+
+	resources = {
+		food = 750
+		wood = 11
+		coal = 2
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_claim_by = ENG
+			add_core_of = IRE
+			buildings = {
+				infrastructure = 6
+				11293 = {
+					naval_base = 4
+				}
+			}
+			victory_points = { 11293 10 } # Dublin
+			set_variable = { railway_size = 1 }
+			set_variable = { crop_farm_size = 45 }
+		}
+
+		1916.4.27 = {
+			owner = IRE
+			remove_claim_by = ENG
+		}
+	}
+	local_supplies = 0.0
+}

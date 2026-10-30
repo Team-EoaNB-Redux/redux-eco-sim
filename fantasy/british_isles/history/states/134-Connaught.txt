@@ -1,0 +1,37 @@
+state = {
+	id = 134
+	name = "STATE_134" # Connaught
+	manpower = 864734
+	state_category = rural
+
+	resources = {
+		food = 250
+		iron = 3
+		wood = 5
+	}
+
+	provinces = {
+		337 3396 9255 9303 9321 9369 11238 11287 11371
+	}
+
+	history = {
+		# End of a New Beginning
+		owner = ENG
+		1857.1.1 = {
+			add_claim_by = ENG
+			add_core_of = IRE
+			buildings = {
+				infrastructure = 5
+			}
+			victory_points = { 9303 1 } # Galway
+			set_variable = { railway_size = 1 }
+			set_variable = { crop_farm_size = 15 }
+		}
+
+		1916.4.27 = {
+			owner = IRE
+			remove_claim_by = ENG
+		}
+	}
+	local_supplies = 0.0
+}
