@@ -1,0 +1,158 @@
+# Variable semantics. World: TST (index 0) owns states 1, 2; OTH owns state 3. Tests run in TST.
+
+test_unset_reads_zero = {
+	log = "[?never_set|0] [?never_set?7|0] [?global.nothing|0]"
+	# expect: 0 7 0
+}
+
+test_temps_are_unscoped = {
+	set_temp_variable = { t = 5 }
+	1 = {
+		log = "[?t|0]"   # temp set in country scope is visible in state scope
+		set_temp_variable = { t = 6 }
+	}
+	log = "[?t|0]"
+	# expect: 5
+	# expect: 6
+}
+
+test_temp_shadows_scope_variable = {
+	set_variable = { x = 1 }
+	set_temp_variable = { x = 2 }
+	log = "[?x|0] [?THIS.x|0]"
+	# expect: 2 1
+}
+
+test_fixed_point_truncation = {
+	set_temp_variable = { a = 1 }
+	divide_temp_variable = { a = 3 }
+	log = "[?a|5]"
+	multiply_temp_variable = { a = 3 }
+	log = "[?a|5]"
+	set_temp_variable = { b = 1.234567 }
+	log = "[?b|5]"
+	set_temp_variable = { c = -7 }
+	divide_temp_variable = { c = 2 }
+	log = "[?c|5]"
+	# expect: 0.33333
+	# expect: 0.99999
+	# expect: 1.23456
+	# expect: -3.50000
+}
+
+test_overflow_wraps = {
+	set_temp_variable = { big = 2147483647 }
+	add_to_temp_variable = { big = 1 }
+	log = "[?big|0]"
+	# expect: -2147483648
+	# expect-diag: overflow
+}
+
+test_divide_by_zero_gives_zero = {
+	set_temp_variable = { a = 5 }
+	divide_temp_variable = { a = 0 }
+	log = "[?a|0]"
+	# expect: 0
+	# expect-diag: div_by_zero
+}
+
+test_default_format_prints_needed_decimals = {
+	set_temp_variable = { a = 2.432 }
+	set_temp_variable = { b = 2.3 }
+	set_temp_variable = { c = 7 }
+	set_temp_variable = { d = -0.5 }
+	log = "[?a] [?b] [?c] [?d]"
+	# expect: 2.432 2.3 7 -0.5
+}
+
+test_array_elements_past_num_are_kept = {
+	add_to_array = { arr = 1 }
+	set_variable = { arr^5 = 42 }
+	log = "[?arr^num] [?arr^5] [?arr^0]"
+	add_to_temp_array = { t = 3 }
+	set_temp_variable = { t^2 = 9 }
+	log = "[?t^num] [?t^2]"
+	clear_array = arr
+	log = "[?arr^num]"
+	# expect: 1 42 1
+	# expect: 1 9
+	# expect: 0
+	# expect-diag: array_ghost_write
+}
+
+test_round_clamp_modulo = {
+	set_temp_variable = { a = 2.5 }
+	round_temp_variable = a
+	set_temp_variable = { b = -2.5 }
+	round_temp_variable = b
+	set_temp_variable = { c = 15 }
+	clamp_temp_variable = { var = c min = 0 max = 10 }
+	set_temp_variable = { d = 17 }
+	modulo_temp_variable = { d = 5 }
+	set_temp_variable = { e = -3 }
+	clamp_temp_variable = { var = e min = 0 }
+	log = "[?a|0] [?b|0] [?c|0] [?d|0] [?e|0]"
+	# expect: 3 -3 10 2 0
+}
+
+test_long_forms = {
+	set_variable = { var = lv value = 4 }
+	add_to_variable = { var = lv value = 1.5 }
+	log = "[?lv|1]"
+	# expect: 5.5
+}
+
+test_global_and_scope_paths = {
+	set_variable = { global.g = 3 }
+	1 = { set_variable = { s = 11 } }
+	set_temp_variable = { st = 1 }
+	1 = {
+		log = "[?controller:global_check|0] [?PREV.mark|0]"
+	}
+	log = "[?global.g|0] [?1.s|0]"
+	set_variable = { mark = 9 }
+	1 = { log = "[?PREV.mark|0] [?owner.mark|0] [?controller.mark|0]" }
+	var:st = { log = "[?s|0]" }
+	# expect: 0 0
+	# expect: 3 11
+	# expect: 9 9 9
+	# expect: 11
+}
+
+test_tokens_and_at_targets = {
+	set_variable = { price@token:food = 5 }
+	set_temp_variable = { r = token:food }
+	log = "[?price@var:r|0] [?r.GetTokenKey]"
+	add_to_variable = { price@var:r = 2 }
+	log = "[?price@token:food|0]"
+	set_variable = { per_country@OTH = 4 }
+	log = "[?per_country@OTH|0]"
+	set_temp_variable = { cid = 12 }
+	set_variable = { global.company_treasury@var:cid = 100 }
+	log = "[?global.company_treasury@12|0]"
+	# expect: 5 food
+	# expect: 7
+	# expect: 4
+	# expect: 100
+}
+
+test_country_value_compares_above_10500 = {
+	set_temp_variable = { financer = THIS }
+	if = {
+		limit = { check_variable = { financer > 10500 } }
+		log = "country"
+	}
+	set_temp_variable = { st = 1 }
+	if = { limit = { check_variable = { st = 1 } } log = "state one" }
+	# expect: country
+	# expect: state one
+}
+
+test_has_and_clear_variable = {
+	set_variable = { z = 0 }
+	if = { limit = { has_variable = z } log = "has z" }
+	clear_variable = z
+	if = { limit = { NOT = { has_variable = z } } log = "cleared" }
+	# expect: has z
+	# expect: cleared
+}

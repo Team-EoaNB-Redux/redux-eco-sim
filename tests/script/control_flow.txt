@@ -1,0 +1,253 @@
+# Control flow, loops, arrays, triggers, scopes, math expressions, meta_effect.
+
+test_if_else_chain = {
+	set_temp_variable = { x = 5 }
+	if = { limit = { check_variable = { x > 10 } } log = "big" }
+	else_if = { limit = { check_variable = { x > 3 } } log = "medium" }
+	else = { log = "small" }
+	if = { limit = { check_variable = { x < 3 } } log = "tiny" }
+	else = { log = "not tiny" }
+	# expect: medium
+	# expect: not tiny
+}
+
+test_check_variable_forms = {
+	set_temp_variable = { x = 5 }
+	if = { limit = { check_variable = { x = 5 } } log = "eq" }
+	if = { limit = { check_variable = { x = 4 } } log = "eq is not >=" }
+	if = { limit = { check_variable = { var = x value = 5 compare = greater_than_or_equals } } log = "long ge" }
+	if = { limit = { check_variable = { var = x value = 4 } } log = "long default ge" }
+	if = { limit = { check_variable = { x > 5 } } log = "strict" }
+	# expect: eq
+	# expect: long ge
+	# expect: long default ge
+}
+
+test_check_variable_le_unsupported = {
+	set_temp_variable = { x = 1 }
+	if = { limit = { check_variable = { x <= 5 } } log = "should not run" }
+	# expect-diag: bad_parameter
+}
+
+test_not_is_nor = {
+	if = { limit = { NOT = { always = no always = no } } log = "nor of falses" }
+	if = { limit = { NOT = { always = no always = yes } } log = "wrong" }
+	if = { limit = { OR = { always = no always = yes } } log = "or" }
+	# expect: nor of falses
+	# expect: or
+}
+
+test_arrays = {
+	add_to_array = { nums = 10 }
+	add_to_array = { nums = 20 }
+	add_to_array = { array = nums value = 15 index = 1 }
+	log = "[?nums^num|0]: [?nums^0|0] [?nums^1|0] [?nums^2|0]"
+	remove_from_array = { nums = 15 }
+	remove_from_array = { array = nums index = 0 }
+	log = "[?nums^num|0]: [?nums^0|0]"
+	add_to_temp_array = { tmp = 3 }
+	add_to_temp_array = { tmp = 9 }
+	add_to_temp_array = { tmp = 1 }
+	find_highest_in_array = { array = tmp value = hv index = hi }
+	log = "[?hv|0] at [?hi|0]"
+	resize_array = { array = nums size = 3 value = 7 }
+	log = "[?nums^num|0] [?nums^2|0]"
+	if = { limit = { is_in_array = { nums = 7 } } log = "has 7" }
+	clear_array = nums
+	log = "[?nums^num|0]"
+	# expect: 3: 10 15 20
+	# expect: 1: 20
+	# expect: 9 at 1
+	# expect: 3 7
+	# expect: has 7
+	# expect: 0
+}
+
+test_for_each_loop_and_break = {
+	add_to_temp_array = { a = 1 }
+	add_to_temp_array = { a = 2 }
+	add_to_temp_array = { a = 3 }
+	add_to_temp_array = { a = 4 }
+	set_temp_variable = { sum = 0 }
+	for_each_loop = {
+		array = a
+		value = v
+		index = i
+		break = bb
+		add_to_temp_variable = { sum = v }
+		if = { limit = { check_variable = { i = 1 } } set_temp_variable = { bb = 1 } }
+		add_to_temp_variable = { sum = 100 }
+	}
+	log = "[?sum|0]"
+	# 1 + 100 (i=0), then 2 (i=1) breaks instantly before +100
+	# expect: 103
+}
+
+test_stale_break_temp_is_reset = {
+	add_to_temp_array = { a = 1 }
+	add_to_temp_array = { a = 2 }
+	set_temp_variable = { b = 1 }
+	set_temp_variable = { n = 0 }
+	for_each_loop = { array = a break = b add_to_temp_variable = { n = 1 } }
+	log = "[?n|0]"
+	# in-game: SoL differs per pop type although b = 1 is left over from the previous pop's lookup
+	# expect: 2
+}
+
+test_scoped_var_does_not_break = {
+	add_to_temp_array = { a = 1 }
+	add_to_temp_array = { a = 2 }
+	set_temp_variable = { n = 0 }
+	for_each_loop = {
+		array = a
+		break = b
+		add_to_temp_variable = { n = 1 }
+		set_variable = { b = 1 }
+	}
+	log = "[?n|0]"
+	# expect: 2
+}
+
+test_for_loop_effect = {
+	set_temp_variable = { s = 0 }
+	for_loop_effect = { start = 0 end = 5 value = k add_to_temp_variable = { s = k } }
+	log = "[?s|0]"
+	for_loop_effect = { start = 10 end = 0 compare = greater_than add = -5 value = k add_to_temp_variable = { s = k } }
+	log = "[?s|0]"
+	# expect: 10
+	# expect: 25
+}
+
+test_while_loop_cap = {
+	set_temp_variable = { n = 0 }
+	while_loop_effect = {
+		limit = { always = yes }
+		add_to_temp_variable = { n = 1 }
+	}
+	log = "[?n|0]"
+	# expect: 1000
+	# expect-diag: loop_cap
+}
+
+test_iterators = {
+	set_temp_variable = { c = 0 }
+	every_controlled_state = { add_to_temp_variable = { c = 1 } }
+	every_state = { limit = { is_owned_by = OTH } add_to_temp_variable = { c = 10 } }
+	log = "[?c|0]"
+	if = { limit = { any_owned_state = { state = 2 } } log = "owns 2" }
+	if = { limit = { all_owned_state = { is_core_of = ROOT } } log = "all cores" }
+	every_country = { limit = { tag = OTH } log = "[THIS.GetName] prev [PREV.GetName]" }
+	random_owned_state = { limit = { state = 2 } log = "random picked [?id|0]" }
+	# expect: 12
+	# expect: owns 2
+	# expect: all cores
+	# expect: OTH prev TST
+	# expect: random picked 2
+}
+
+test_for_each_scope_loop = {
+	add_to_array = { global.list = TST }
+	add_to_array = { global.list = OTH }
+	for_each_scope_loop = { array = global.list log = "[THIS.GetTag]" }
+	# expect: TST
+	# expect: OTH
+}
+
+test_scripted_effect_and_trigger = {
+	helper_add_two = yes
+	helper_add_two = yes
+	if = { limit = { is_big = yes } log = "big [?helper_n|0]" }
+	if = { limit = { is_big = no } log = "not big" }
+	# expect: big 4
+}
+
+helper_add_two = {
+	add_to_temp_variable = { helper_n = 2 }
+}
+
+scripted_triggers = {
+	is_big = {
+		set_temp_variable = { probe = helper_n }
+		multiply_temp_variable = { probe = 2 }
+		check_variable = { probe > 7 }
+	}
+}
+
+test_math_expressions = {
+	set_temp_variable = { x = 12 }
+	set_temp_variable = { r = { value = x add = 3 multiply = 2 } }
+	set_temp_variable = { p = { value = 1.1 pow = 2 } }
+	set_temp_variable = { q = { value = 7 clamp = { min = 0 max = 5 } } }
+	set_temp_variable = { q2 = { value = 7 clamp = { max = 5 min = 6 } } }
+	set_temp_variable = { cond = { value = x if = { limit = { value = x greater_than = 10 } add = 100 } else = { subtract = 1 } } }
+	set_temp_variable = { rnd = { value = 2.5 round = yes } }
+	set_temp_variable = { sq = { value = 16 root = 2 } }
+	log = "[?r|0] [?p|2] [?q|0] [?q2|0] [?cond|0] [?rnd|0] [?sq|0]"
+	# expect: 30 1.21 5 6 112 3 4
+}
+
+test_math_parse_failure_is_zero = {
+	set_temp_variable = { bad = { value = 5 frobnicate = 3 } }
+	log = "[?bad|0]"
+	# expect: 0
+	# expect-diag: math_expr_error
+}
+
+test_meta_effect = {
+	set_variable = { steel_foundry_size = 7 }
+	set_temp_variable = { industry_token = token:steel_foundry }
+	meta_effect = {
+		text = {
+			if = { limit = { has_variable = [INDUSTRY]_size } set_variable = { size@var:industry_token = [INDUSTRY]_size } }
+		}
+		INDUSTRY = "[?industry_token.GetTokenKey]"
+	}
+	log = "[?size@token:steel_foundry|0]"
+	set_temp_variable = { lvl = 3.7 }
+	meta_effect = {
+		text = { set_temp_variable = { out = [N] } }
+		N = "[?lvl|0]"
+	}
+	log = "[?out|0]"
+	# expect: 7
+	# expect: 3
+}
+
+test_text_formats = {
+	set_temp_variable = { v = 0.256 }
+	set_temp_variable = { big = 65536 }
+	log = "[?v] [?v|%] [?v|%0] [?big|*] [?v|=1] [?big]"
+	# expect: 0.256 25.60% 25% 65.53K +0.2 65536
+}
+
+test_temp_effects_inside_triggers = {
+	set_temp_variable = { base = 3 }
+	if = {
+		limit = {
+			set_temp_variable = { doubled = base }
+			multiply_temp_variable = { doubled = 2 }
+			check_variable = { doubled > 5 }
+		}
+		log = "doubled [?doubled|0]"
+	}
+	# expect: doubled 6
+}
+
+test_flags_ideas_dynamic_modifiers = {
+	set_country_flag = my_flag
+	if = { limit = { has_country_flag = my_flag } log = "flag" }
+	add_ideas = free_trade
+	if = { limit = { has_idea = free_trade } log = "idea" }
+	swap_ideas = { remove_idea = free_trade add_idea = closed_economy }
+	if = { limit = { NOT = { has_idea = free_trade } has_idea = closed_economy } log = "swapped" }
+	add_dynamic_modifier = { modifier = resource_trade }
+	if = { limit = { has_dynamic_modifier = { modifier = resource_trade } } log = "dynmod" }
+	set_temp_variable = { tech_temp = token:tech_metallurgy }
+	set_technology = { tech_metallurgy = 1 popup = no }
+	if = { limit = { has_tech = var:tech_temp } log = "tech" }
+	# expect: flag
+	# expect: idea
+	# expect: swapped
+	# expect: dynmod
+	# expect: tech
+}

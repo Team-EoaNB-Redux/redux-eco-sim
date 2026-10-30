@@ -1,0 +1,33 @@
+# Fantasy test bed: the 19 British Isles states (incl. all of Ireland) as one country, ENG, with no subjects,
+# no market members and no trade partners. A small but economically complete closed economy for testing eco
+# rewrites without the unbalanced 1857 world pulling it into a recession. Not a parity scenario.
+scenario = {
+	name = "British Isles"
+	start_date = 1857.5.11
+	seed = 12345
+
+	countries = { UCT ENG }
+	include_subjects = no
+	include_market_members = no
+	players = { }
+
+	states = {
+		952 338 121 122 123 125 127 128 129 130 131 132 133 136 120   # Great Britain
+		119 113 134 135                                               # Ireland
+	}
+	state_owner = ENG
+
+	on_actions = { "_eoanbr_constants_on_startup.txt" "_eoanbr_eco.txt" }
+	events = { "00_economy.txt" }
+
+	skip_effects = {
+		econ_rerender_gdp_graph econ_rerender_country_gdp_graph econ_rerender_country_budget_graph
+		create_pie_chart_revenue create_pie_chart_spending create_pie_chart_pop_type
+		country_update_trade_display
+	}
+
+	overrides = { }
+
+	# ENG's 1857 deployed manpower (feeds military_payroll_spending).
+	engine = { ENG = { deployed_army_manpower_k = 108.1 deployed_navy_manpower_k = 119.7 garrison_manpower_need = 57500 } }
+}

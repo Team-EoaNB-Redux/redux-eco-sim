@@ -1,0 +1,29 @@
+# Default watch list for recorded runs (one HOI4 variable reference per line; scope prefix = TAG / state id / global).
+# Country-level eco aggregates for the scenario's main country
+ENG.gdp_amount
+ENG.treasury
+ENG.national_debt
+ENG.net_budget
+ENG.investment_fund
+ENG.modifier@incentives_modifier
+ENG.modifier@consumer_confidence_modifier
+# Market prices (ENG is a market leader)
+ENG.price@token:food
+ENG.price@token:wood
+ENG.price@token:iron
+ENG.price@token:coal
+ENG.price@token:steel
+ENG.price@token:tools
+ENG.price@token:machinery
+ENG.price@token:textiles
+ENG.price@token:consumer_goods
+ENG.price@token:services
+# London (state 952) and the West Midlands (state 128)
+952.gdp_amount
+952.base_wage
+952.labor_utilization
+952.pops@token:laborers
+952.pops_unemployed@token:laborers
+952.pops_sol
+128.gdp_amount
+128.base_wage

@@ -1,0 +1,26 @@
+# Build outputs
+build/
+bin/
+*.obj
+*.o
+*.os
+*.lib
+*.exp
+*.pdb
+*.ilk
+.sconsign*.dblite
+compile_commands.json
+
+# Vendored (copied from Rota Fortunae; convert to a submodule on branch 4.5 if this becomes a repo)
+godot-cpp/
+
+# Godot
+project/.godot/
+project/bin/windows/*
+project/bin/linux/*
+!project/bin/*.gdextension
+
+# Simulator outputs
+runs/
+
+custom.py

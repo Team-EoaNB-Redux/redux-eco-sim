@@ -1,0 +1,64 @@
+# ENG + its subjects and market, 1857. UCT is always loaded (it hosts on_monthly_UCT / on_weekly_UCT).
+scenario = {
+	name = "ENG 1857"
+	start_date = 1857.5.11   # bookmark common/bookmarks/1857-5-11.txt
+	seed = 12345
+
+	countries = { UCT ENG }
+	include_subjects = yes
+	include_market_members = yes
+	players = { }
+
+	on_actions = { "_eoanbr_constants_on_startup.txt" "_eoanbr_eco.txt" }
+	events = { "00_economy.txt" }
+
+	# GUI-only effects: skipping them only saves time. NEVER skip initialize_gdp_graph /
+	# initialize_country_gdp_graph (they seed gdp_amount_array with `random`, which feeds gdp_growth).
+	skip_effects = {
+		econ_rerender_gdp_graph econ_rerender_country_gdp_graph econ_rerender_country_budget_graph
+		create_pie_chart_revenue create_pie_chart_spending create_pie_chart_pop_type
+		country_update_trade_display
+	}
+
+	overrides = { }
+
+	# Deployed manpower at the 1857 bookmark (in-game; feeds military_payroll_spending). No OOB import yet.
+	engine = { ENG = { deployed_army_manpower_k = 108.1 deployed_navy_manpower_k = 119.7 garrison_manpower_need = 57500 } }
+
+	# Stand-in for the rest of the world: ENG's in-game startup trade (game.log EOSIM dump, 1857.5.11), held
+	# fixed for the whole run. Without it, the subset has no one to trade with and food/luxury prices hit
+	# their caps. offers = trade assumes full route share and shipping efficiency. Remove for world_1857.
+	pins = {
+		ENG.trade@token:food = 5571              ENG.offers@token:food = 5571
+		ENG.trade@token:luxuries = 1531          ENG.offers@token:luxuries = 1531
+		ENG.trade@token:wood = 5726              ENG.offers@token:wood = 5726
+		ENG.trade@token:fiber = 982              ENG.offers@token:fiber = 982
+		ENG.trade@token:iron = -1072             ENG.offers@token:iron = -1072
+		ENG.trade@token:coal = -2867             ENG.offers@token:coal = -2867
+		ENG.trade@token:copper = 125             ENG.offers@token:copper = 125
+		ENG.trade@token:chromium = -0.3125       ENG.offers@token:chromium = -0.3125
+		ENG.trade@token:steel = -34              ENG.offers@token:steel = -34
+		ENG.trade@token:tools = -244             ENG.offers@token:tools = -244
+		ENG.trade@token:machinery = -303         ENG.offers@token:machinery = -303
+		ENG.trade@token:chemicals = -307         ENG.offers@token:chemicals = -307
+		ENG.trade@token:consumer_goods = -1764   ENG.offers@token:consumer_goods = -1764
+		ENG.trade@token:textiles = -1243         ENG.offers@token:textiles = -1243
+		# Global market prices the trade is valued at. Not in the in-game dump yet: these come from the
+		# world_1857 sim at startup (its ENG GDP is within 3% of the game). Without them the subset values
+		# imports at its own capped prices and other_spending absorbs a -100K trade value.
+		ENG.global_market_price@token:food = 5.95815
+		ENG.global_market_price@token:luxuries = 3.54232
+		ENG.global_market_price@token:wood = 2.27099
+		ENG.global_market_price@token:fiber = 3.25108
+		ENG.global_market_price@token:iron = 0.97116
+		ENG.global_market_price@token:coal = 1.59394
+		ENG.global_market_price@token:copper = 1.5
+		ENG.global_market_price@token:chromium = 2.5
+		ENG.global_market_price@token:steel = 4.05575
+		ENG.global_market_price@token:tools = 11.9089
+		ENG.global_market_price@token:machinery = 19.21375
+		ENG.global_market_price@token:chemicals = 2.94428
+		ENG.global_market_price@token:consumer_goods = 18.04088
+		ENG.global_market_price@token:textiles = 11.56304
+	}
+}

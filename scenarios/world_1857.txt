@@ -1,0 +1,27 @@
+# The whole 1857 world (every state and country), as in game. UCT is always loaded (it hosts on_monthly_UCT / on_weekly_UCT).
+scenario = {
+	name = "World 1857"
+	start_date = 1857.5.11   # bookmark common/bookmarks/1857-5-11.txt
+	seed = 12345
+
+	countries = { ALL }
+	include_subjects = yes
+	include_market_members = yes
+	players = { }
+
+	on_actions = { "_eoanbr_constants_on_startup.txt" "_eoanbr_eco.txt" }
+	events = { "00_economy.txt" }
+
+	# GUI-only effects: skipping them only saves time. NEVER skip initialize_gdp_graph /
+	# initialize_country_gdp_graph (they seed gdp_amount_array with `random`, which feeds gdp_growth).
+	skip_effects = {
+		econ_rerender_gdp_graph econ_rerender_country_gdp_graph econ_rerender_country_budget_graph
+		create_pie_chart_revenue create_pie_chart_spending create_pie_chart_pop_type
+		country_update_trade_display
+	}
+
+	overrides = { }
+
+	# Deployed manpower at the 1857 bookmark (in-game; feeds military_payroll_spending). No OOB import yet.
+	engine = { ENG = { deployed_army_manpower_k = 108.1 deployed_navy_manpower_k = 119.7 garrison_manpower_need = 57500 } }
+}
