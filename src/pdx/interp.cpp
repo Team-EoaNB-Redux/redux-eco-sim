@@ -280,7 +280,71 @@ bool Interp::is_skipped(Sym name) const {
 }
 
 void Interp::diag(DiagKind k, SrcLoc l, const std::string& msg) {
+    if (load_pass_) return; // The load pass only looks for load errors. Running code reports as usual
     diags_.report(k, file_path(l.file_id), l.line, msg, w_.date.to_string());
+}
+
+// ---- load errors ----
+
+void Interp::set_game_names(std::unordered_set<Sym> effects, std::unordered_set<Sym> triggers) {
+    game_effects_ = std::move(effects);
+    game_triggers_ = std::move(triggers);
+}
+
+void Interp::note_load_error(SrcLoc l, const std::string& why) {
+    if (!load_pass_) return; // Only the files the load pass reads: scripted effects and triggers
+    auto [it, fresh] = load_errors_.try_emplace(l.file_id, LoadError{l.line, why});
+    if (!fresh && l.line < it->second.line) it->second = LoadError{l.line, why};
+}
+
+uint32_t Interp::load_error_line(uint32_t file_id) const {
+    auto it = load_errors_.find(file_id);
+    return it == load_errors_.end() ? 0 : it->second.line;
+}
+
+std::string Interp::load_error_reason(uint32_t file_id) const {
+    auto it = load_errors_.find(file_id);
+    return it == load_errors_.end() ? std::string{} : it->second.why;
+}
+
+void Interp::find_load_errors(const ScriptFile& f, bool triggers) {
+    for (const ParseError& e : f.errors) note_load_error(SrcLoc{f.file_id, e.line}, "syntax error: " + e.message);
+    const auto uses = builtin_uses; // Coverage counts what runs, not this pass
+    load_pass_ = true;
+    for (const Node* n = f.root_begin(); n != f.root_end(); ++n) {
+        if (n->key == kNoSym || !n->is_block) continue;
+        if (triggers) {
+            (void)compile_triggers(f, *n);
+        } else {
+            (void)compile_effects(f, *n);
+        }
+    }
+    load_pass_ = false;
+    builtin_uses = uses;
+    if (!load_error_line(f.file_id)) return;
+    // History may already have compiled some of this file's entries: compile them again, with the load error applied
+    for (auto& [name, d] : scripted_effects_) {
+        if (d.file == &f) d.effects.reset();
+    }
+    for (auto& [name, d] : scripted_triggers_) {
+        if (d.file == &f) d.triggers.reset();
+    }
+}
+
+void Interp::report_load_errors() {
+    for (const auto& [file_id, e] : load_errors_) {
+        auto it = math_lines_.find(file_id);
+        if (it == math_lines_.end()) continue;
+        const auto& lines = it->second;
+        const size_t zeroed = std::count_if(lines.begin(), lines.end(), [&](uint32_t ln) { return ln > e.line; });
+        if (zeroed == 0) continue;
+        const uint32_t first = *std::min_element(lines.begin(), lines.end(), [&](uint32_t a, uint32_t b) {
+            return (a > e.line ? a : UINT32_MAX) < (b > e.line ? b : UINT32_MAX);
+        });
+        diag(DiagKind::LoadError, SrcLoc{file_id, e.line},
+             e.why + ". In-game the " + std::to_string(zeroed) + " math expressions after it in this file read 0 (first at line " +
+                 std::to_string(first) + ")");
+    }
 }
 
 // ---- compilation ----
@@ -409,6 +473,7 @@ std::unique_ptr<EffectOp> Interp::compile_effect(const ScriptFile& f, const Node
     } else {
         diag(DiagKind::UnknownEffect, l, "unknown effect '" + std::string(key) + "'");
     }
+    if (!game_effects_.empty() && !is_game_effect(n.key)) note_load_error(l, "unknown effect '" + std::string(key) + "'");
     return nullptr;
 }
 
@@ -483,7 +548,9 @@ std::unique_ptr<TriggerOp> Interp::compile_trigger(const ScriptFile& f, const No
     if (allowed_in_trigger(key)) {
         auto eit = reg_.effects.find(n.key);
         if (eit != reg_.effects.end()) {
+            ++trigger_effect_depth_;
             auto inner = eit->second.make(*this, f, n);
+            --trigger_effect_depth_;
             if (!inner) return nullptr;
             inner->loc = l;
             auto op = std::make_unique<EffectAsTrigger>();
@@ -507,6 +574,7 @@ std::unique_ptr<TriggerOp> Interp::compile_trigger(const ScriptFile& f, const No
     } else {
         diag(DiagKind::UnknownTrigger, l, "unknown trigger '" + std::string(key) + "' (evaluates false)");
     }
+    if (!game_triggers_.empty() && !is_game_trigger(n.key)) note_load_error(l, "unknown trigger '" + std::string(key) + "'");
     auto op = std::make_unique<FalseTrigger>();
     op->loc = l;
     return op;
@@ -565,6 +633,14 @@ bool Interp::compile_operand_text(std::string_view text, SrcLoc l, Operand& out)
 bool Interp::compile_operand(const ScriptFile& f, const Node& n, Operand& out) {
     const SrcLoc l = loc(f, n);
     if (n.is_block) {
+        if (trigger_effect_depth_ > 0) {
+            diag(DiagKind::MathInTrigger, l, "math expression in a trigger block: fine in ticks, 0 from the console. Use plain temp effects");
+            if (sem_.math_in_trigger_is_zero) {
+                out.type = Operand::Type::Literal;
+                out.literal = Value::number(Fixed{});
+                return true;
+            }
+        }
         out.type = Operand::Type::Expr;
         out.expr = compile_math(*this, f, n);
         return true;

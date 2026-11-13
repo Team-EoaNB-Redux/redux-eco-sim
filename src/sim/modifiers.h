@@ -25,6 +25,8 @@ public:
     bool defined(pdx::Sym m) const { return d_.modifier_defined.count(m) != 0; }
     void mark_dirty(pdx::ScopeRef s);
     void mark_all_dirty();
+    // Call once startup is over: stability from then on moves with ideas gained or lost (bankruptcy is -0.65).
+    void capture_stability_baseline();
     void refresh_dynamic(pdx::ScopeRef s);
     // Start-of-day processing: expiry, remove_trigger, re-evaluation of variable-valued entries.
     void daily_refresh();
@@ -38,6 +40,8 @@ public:
     std::vector<Source> breakdown(pdx::ScopeRef s, pdx::Sym m);
 
 private:
+    bool stability_follows_ideas_ = false;
+    pdx::Fixed idea_stability_factor(const world::Country& co) const;
     struct ScopeCache {
         bool dirty = true;
         bool dyn_valid = false;

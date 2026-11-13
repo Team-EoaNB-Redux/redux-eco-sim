@@ -47,13 +47,19 @@ struct Semantics {
     bool check_shorthand_eq_is_equals = true;
     // check_variable shorthand `<=` / `>=`: memory says unsupported in-game. false -> evaluate as false + lint
     bool check_shorthand_allows_le_ge = false;
-    // Same-day order when a weekly and a monthly tick coincide
-    bool monthly_before_weekly = true;
+    // Same-day order when a weekly and a monthly tick coincide. VERIFIED from the 1857.6.1 autosave: the world market
+    // in the save is the one from before the month's production, so no weekly tick followed the monthly.
+    bool monthly_before_weekly = false;
     int max_effect_iterations = 1000; // NDefines.NGame.MAX_EFFECT_ITERATION
     int max_call_depth = 200;
     // `[?x]` with no format: -1 = as many decimals as the value has (2.432 -> "2.432", 2.3 -> "2.3"; Strat).
     // A number >= 0 forces that many (truncated).
     int text_default_decimals = -1;
+    // In ticks and at startup `arr^temp` reads normally in a math expression and math works inside all_of (checked
+    // against an autosave). From the console both gave 0 (probes array_in_expression, all_of_sum), cause unconfirmed.
+    // Sites are always reported; these force the 0 on, for what-if runs.
+    bool math_array_read_is_zero = false;
+    bool math_in_trigger_is_zero = false;
 };
 
 } // namespace pdx

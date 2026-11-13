@@ -62,6 +62,10 @@ bool Simulation::load(const std::string& mod_root, const std::string& scenario_p
     setup.force_owner = scenario_.state_owner;
     loader::apply_history(*interp_, world_, data_, prescan_, selected, scenario_.start_date, setup);
 
+    if (!scenario_.difficulty.empty()) {
+        world_.difficulty_player = pdx::intern("diff_" + scenario_.difficulty + "_player");
+        world_.difficulty_ai = pdx::intern("diff_" + scenario_.difficulty + "_ai");
+    }
     for (Sym tag : scenario_.players) {
         if (world::Country* c = world_.country(world_.country_index(tag))) c->is_ai = false;
     }
@@ -82,6 +86,51 @@ bool Simulation::load(const std::string& mod_root, const std::string& scenario_p
             c->battalions[k] = static_cast<int32_t>(n.whole_trunc());
         }
     }
+    for (const auto& sv : scenario_.ships) {
+        world::Country* c = world_.country(world_.country_index(sv.tag));
+        if (!c) continue;
+        for (const auto& [k, v] : sv.values) {
+            pdx::Fixed n;
+            pdx::Fixed::parse(v, n);
+            c->ships[k] = static_cast<int32_t>(n.whole_trunc());
+        }
+    }
+    for (const auto& sv : scenario_.ideas) {
+        world::Country* c = world_.country(world_.country_index(sv.tag));
+        if (!c) continue;
+        for (const auto& [k, v] : sv.values) {
+            const auto it = std::find(c->ideas.begin(), c->ideas.end(), k);
+            if (v == "no") {
+                if (it != c->ideas.end()) c->ideas.erase(it);
+            } else if (it == c->ideas.end()) {
+                c->ideas.push_back(k);
+            }
+        }
+    }
+    for (const auto& sv : scenario_.techs) {
+        world::Country* c = world_.country(world_.country_index(sv.tag));
+        if (!c) continue;
+        for (const auto& [k, v] : sv.values) {
+            if (v == "no") {
+                c->techs.erase(k);
+                c->tech_order.erase(std::remove(c->tech_order.begin(), c->tech_order.end(), k), c->tech_order.end());
+            } else if (c->techs.insert(k).second) {
+                c->tech_order.push_back(k);
+            }
+        }
+    }
+    // The game's load errors, which zero every later math expression in their file (Interp::find_load_errors). After
+    // history, so country tags resolve. Ideology groups are triggers too (`centrism > 0.01`)
+    const std::string names_dir = (std::filesystem::path(loader::executable_dir()).parent_path() / "data").string();
+    auto game_triggers = loader::load_name_list(loader::join(names_dir, "game_triggers.txt"));
+    if (!game_triggers.empty()) {
+        for (Sym s : loader::load_ideology_groups(mod_root)) game_triggers.insert(s);
+    }
+    interp_->set_game_names(loader::load_name_list(loader::join(names_dir, "game_effects.txt")), std::move(game_triggers));
+    for (const pdx::ScriptFile* f : data_.scripted_effect_files) interp_->find_load_errors(*f, false);
+    for (const pdx::ScriptFile* f : data_.scripted_trigger_files) interp_->find_load_errors(*f, true);
+    interp_->report_load_errors();
+
     mods_->mark_all_dirty();
     collect_on_actions();
     load_seconds = seconds_since(t0);
@@ -133,6 +182,7 @@ void Simulation::startup() {
     mods_->daily_refresh();
     fire("on_startup", scope);
     apply_overrides();
+    mods_->capture_stability_baseline();
     mods_->daily_refresh();
     startup_seconds = seconds_since(t0);
 }

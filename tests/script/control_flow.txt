@@ -63,6 +63,88 @@ test_arrays = {
 	# expect: 0
 }
 
+test_math_array_read_is_reported = {
+	add_to_array = { nums = 2 }
+	add_to_array = { nums = 3 }
+	set_temp_variable = { i = 1 }
+	# Reads normally in a tick, but 0 from the console: every site is reported
+	set_temp_variable = { x = { value = nums^i multiply = 10 } }
+	log = "[?x|0]"
+	set_temp_variable = { x = { value = 1 add = { value = nums^1 } } }
+	log = "[?x|0]"
+	set_temp_variable = { x = { value = 5 clamp = { min = 0 max = nums^i } } }
+	log = "[?x|0]"
+	# expect: 30
+	# expect: 4
+	# expect: 3
+	# expect-diag: math_array_read
+}
+
+test_math_array_read_safe_forms = {
+	add_to_array = { nums = 2 }
+	add_to_array = { nums = 3 }
+	set_temp_variable = { i = 1 }
+	# Staged first, and ^num, are not reported
+	set_temp_variable = { y = nums^i }
+	set_temp_variable = { x = { value = y multiply = 10 add = nums^num } }
+	log = "[?x|0]"
+	# Plain effects are not math expressions
+	add_to_array = { array = nums value = nums^i }
+	log = "[?nums^2|0]"
+	# expect: 32
+	# expect: 3
+}
+
+test_math_in_all_of_is_reported = {
+	add_to_array = { nums = 2 }
+	add_to_array = { nums = 3 }
+	add_to_array = { nums = 5 }
+	set_temp_variable = { sum = 0 }
+	if = {
+		limit = {
+			all_of = {
+				array = nums
+				value = v
+				add_to_temp_variable = { sum = { value = v multiply = 2 } }
+			}
+		}
+		log = "true [?sum|0]"
+	}
+	# expect: true 20
+	# expect-diag: math_in_trigger
+}
+
+test_math_in_limit_is_reported = {
+	set_temp_variable = { x = 7 }
+	if = { limit = { set_temp_variable = { x = { value = 3 multiply = 2 } } } log = "[?x|0]" }
+	# expect: 6
+	# expect-diag: math_in_trigger
+}
+
+test_plain_temp_effects_in_all_of = {
+	add_to_array = { nums = 2 }
+	add_to_array = { nums = 3 }
+	add_to_array = { nums = 5 }
+	add_to_array = { other = 10 }
+	add_to_array = { other = 20 }
+	add_to_array = { other = 30 }
+	set_temp_variable = { sum = 0 }
+	if = {
+		limit = {
+			all_of = {
+				array = nums
+				value = v
+				index = idx
+				set_temp_variable = { t = other^idx }
+				multiply_temp_variable = { t = v }
+				add_to_temp_variable = { sum = t }
+			}
+		}
+		log = "true [?sum|0]"
+	}
+	# expect: true 230
+}
+
 test_for_each_loop_and_break = {
 	add_to_temp_array = { a = 1 }
 	add_to_temp_array = { a = 2 }
@@ -178,12 +260,14 @@ test_math_expressions = {
 	set_temp_variable = { r = { value = x add = 3 multiply = 2 } }
 	set_temp_variable = { p = { value = 1.1 pow = 2 } }
 	set_temp_variable = { q = { value = 7 clamp = { min = 0 max = 5 } } }
+	# The game rejects max before min ("Expected 'min' as argument 1"), so q2 reads 0
 	set_temp_variable = { q2 = { value = 7 clamp = { max = 5 min = 6 } } }
 	set_temp_variable = { cond = { value = x if = { limit = { value = x greater_than = 10 } add = 100 } else = { subtract = 1 } } }
 	set_temp_variable = { rnd = { value = 2.5 round = yes } }
 	set_temp_variable = { sq = { value = 16 root = 2 } }
 	log = "[?r|0] [?p|2] [?q|0] [?q2|0] [?cond|0] [?rnd|0] [?sq|0]"
 	# expect: 30 1.21 5 0 112 3 4
+	# expect-diag: math_expr_error
 }
 
 test_probe_arithmetic = {
@@ -264,4 +348,14 @@ test_flags_ideas_dynamic_modifiers = {
 	# expect: swapped
 	# expect: dynmod
 	# expect: tech
+}
+
+test_declare_war_on_reaches_both_sides = {
+	if = { limit = { has_war = no } log = "peace" }
+	declare_war_on = { target = OTH type = annex_everything }
+	if = { limit = { has_war_with = OTH } log = "at war" }
+	OTH = { if = { limit = { has_war = yes } log = "both sides" } }
+	# expect: peace
+	# expect: at war
+	# expect: both sides
 }

@@ -40,7 +40,7 @@ public:
 
     // ---- queries ----
     // `ref` = HOI4 variable reference with an optional leading scope: "ENG.treasury", "952.base_wage",
-    // "global.base_price@token:steel", "ENG.pops@token:laborers", "ENG.modifier@incentives_modifier".
+    // "global.base_price@token:steel", "ENG.pops@token:working_class", "ENG.modifier@incentives_modifier".
     bool eval(const std::string& ref, pdx::Value& out, std::string& error);
     // Runs effect text in a scope (like the in-game `effect` console command). Returns log lines.
     bool run_effect(pdx::ScopeRef scope, const std::string& text, std::vector<std::string>& log_out, std::string& error);

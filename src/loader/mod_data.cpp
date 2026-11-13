@@ -266,15 +266,48 @@ bool load_mod_data(const std::string& root, pdx::Interp& interp, ModData& d) {
     }
 
     for (const auto& path : list_files(root, "common/scripted_effects")) {
-        if (const ScriptFile* f = load_script(interp, root, path)) interp.index_scripted_effects(*f);
+        if (const ScriptFile* f = load_script(interp, root, path)) {
+            interp.index_scripted_effects(*f);
+            d.scripted_effect_files.push_back(f);
+        }
     }
     for (const auto& path : list_files(root, "common/scripted_triggers")) {
-        if (const ScriptFile* f = load_script(interp, root, path)) interp.index_scripted_triggers(*f);
+        if (const ScriptFile* f = load_script(interp, root, path)) {
+            interp.index_scripted_triggers(*f);
+            d.scripted_trigger_files.push_back(f);
+        }
     }
     for (const auto& path : list_files(root, "common/on_actions")) {
         if (const ScriptFile* f = load_script(interp, root, path)) d.on_action_files.push_back(f);
     }
     return true;
+}
+
+std::unordered_set<Sym> load_name_list(const std::string& path) {
+    std::unordered_set<Sym> out;
+    std::ifstream in(path, std::ios::binary);
+    std::string line;
+    while (std::getline(in, line)) {
+        while (!line.empty() && (line.back() == '\r' || line.back() == ' ')) line.pop_back();
+        if (line.empty() || line[0] == '#') continue;
+        out.insert(pdx::intern(line));
+    }
+    return out;
+}
+
+std::vector<Sym> load_ideology_groups(const std::string& root) {
+    std::vector<Sym> out;
+    for (const auto& path : list_files(root, "common/ideologies")) {
+        ScriptFile f;
+        pdx::parse_file(path, f);
+        for (const Node* top = f.root_begin(); top != f.root_end(); ++top) {
+            if (!top->is_block || !key_is(*top, "ideologies")) continue;
+            for (const Node* g = f.begin(*top); g != f.end(*top); ++g) {
+                if (g->key != pdx::kNoSym && g->is_block) out.push_back(g->key);
+            }
+        }
+    }
+    return out;
 }
 
 void load_localisation(const std::string& root, std::unordered_map<std::string, std::string>& out) {

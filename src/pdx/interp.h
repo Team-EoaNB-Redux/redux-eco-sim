@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace pdx {
@@ -212,6 +213,24 @@ public:
     bool compile_ref(std::string_view text, SrcLoc loc, VarRef& out);
     SrcLoc loc(const ScriptFile& f, const Node& n) const { return SrcLoc{f.file_id, n.line}; }
 
+    // ---- load errors (docs/SEMANTICS.md) ----
+    // HOI4 reads a script file top to bottom, and after the file's first load error (a syntax error, an unknown effect
+    // or trigger, a math expression it rejects, `log = ""`) every later math expression in that file evaluates to 0.
+    // find_load_errors compiles each entry of a scripted effects or triggers file once, as the game does at load, to
+    // find that line; nothing is kept or reported. report_load_errors then reports each one that zeroes an expression.
+    // Names in the game's own effect and trigger documentation aren't load errors, even where the simulator lacks them.
+    void set_game_names(std::unordered_set<Sym> effects, std::unordered_set<Sym> triggers);
+    void find_load_errors(const ScriptFile& f, bool triggers);
+    void report_load_errors();
+    void note_load_error(SrcLoc l, const std::string& why);
+    bool is_game_effect(Sym s) const { return game_effects_.count(s) != 0; }
+    bool is_game_trigger(Sym s) const { return game_triggers_.count(s) != 0; }
+    bool in_load_pass() const { return load_pass_; }
+    // First load-error line of the file, 0 for none
+    uint32_t load_error_line(uint32_t file_id) const;
+    std::string load_error_reason(uint32_t file_id) const;
+    void note_math_expr(SrcLoc l) { math_lines_[l.file_id].push_back(l.line); }
+
     // ---- execution ----
     // Runs a block as a top-level execution with a fresh temp frame (or the given one).
     void run(const EffectBlock& block, ScopeRef self, ScopeRef root = ScopeRef::none(),
@@ -278,6 +297,15 @@ private:
     std::unordered_map<Sym, ScriptedDef> scripted_effects_;
     std::unordered_map<Sym, ScriptedDef> scripted_triggers_;
     std::vector<Sym> skipped_;
+    int trigger_effect_depth_ = 0; // > 0 while compiling a temp effect that sits in a trigger block
+    struct LoadError {
+        uint32_t line = 0;
+        std::string why;
+    };
+    std::unordered_map<uint32_t, LoadError> load_errors_;          // file id -> first load error
+    std::unordered_map<uint32_t, std::vector<uint32_t>> math_lines_; // file id -> math expression lines, from the load pass
+    std::unordered_set<Sym> game_effects_, game_triggers_;
+    bool load_pass_ = false;
 };
 
 // Shared helpers for builtin implementations.

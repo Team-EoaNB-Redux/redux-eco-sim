@@ -1,0 +1,52 @@
+# M00 test bed: the debt switch, the month counter and ENG's test industries (toi/history/states, "# >>> rework test industries")
+global.month
+global.years_passed
+ENG.gdp_amount_yearly^num
+# ENG
+ENG.gdp_amount
+ENG.treasury
+ENG.net_budget
+ENG.revenue
+ENG.spending
+ENG.national_debt_k
+ENG.debt_level
+ENG.national_debt_interest
+ENG.modifier@consumer_confidence_modifier
+# Countries that went bankrupt or ran deep deficits on the stripped map (decisions.md Q2)
+HOL.treasury
+HOL.debt_level
+MNC.treasury
+MNC.debt_level
+BRE.treasury
+BRE.debt_level
+FRA.treasury
+FRA.debt_level
+RUS.treasury
+RUS.debt_level
+SWE.treasury
+SWE.debt_level
+SPR.treasury
+SPR.debt_level
+# Test industries: workers employed (K) and first output
+132.employed@token:textile_mill
+132.production@token:textile_mill^0
+132.employed@token:coal
+128.employed@token:steel_foundry
+128.production@token:steel_foundry^0
+128.employed@token:tooling_workshop
+128.employed@token:iron
+952.employed@token:urban_center
+952.employed@token:consumer_goods_factory
+125.employed@token:crop_farm
+125.employed@token:livestock_ranch
+122.employed@token:coal
+122.employed@token:iron
+# Prices of what they make
+ENG.price@token:textiles
+ENG.price@token:steel
+ENG.price@token:tools
+ENG.price@token:consumer_goods
+ENG.price@token:services
+ENG.price@token:coal
+ENG.price@token:iron
+ENG.price@token:food

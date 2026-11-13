@@ -10,7 +10,7 @@ scenario = {
 	players = { }
 
 	on_actions = { "_eoanbr_constants_on_startup.txt" "_eoanbr_eco.txt" }
-	events = { "00_economy.txt" }
+	events = { "00_economy.txt" "eoanbr_egypt_debt_system_events.txt" } # the second holds bankruptcy, egy_debt_system.7
 
 	# GUI-only effects: skipping them only saves time. NEVER skip initialize_gdp_graph /
 	# initialize_country_gdp_graph (they seed gdp_amount_array with `random`, which feeds gdp_growth).
@@ -21,6 +21,8 @@ scenario = {
 	}
 
 	overrides = { }
+
+	include = "save_inputs_1857.txt" # armies, production lines, default laws, startup content: tools/import_save_inputs.py
 
 	# Deployed manpower at the 1857 bookmark (in-game; feeds military_payroll_spending). No OOB import yet.
 	# Stability backed out of in-game consumer confidence (108.66 = 100 + 20 x the stability_good scale); held fixed.

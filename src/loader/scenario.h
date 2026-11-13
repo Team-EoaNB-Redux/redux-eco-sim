@@ -17,7 +17,12 @@
 //     states = { 952 128 }  state_owner = ENG   # fantasy setup: only these states, all owned by ENG
 //     pins = { ENG.trade@token:food = 5571 }   # held for the whole run: script writes keep this value
 //     engine = { ENG = { manpower_k = 500 } }                                # unmodelled engine values
-//     units = { ENG = { infantry = 40 } }                                    # battalions/ships by type
+//     units = { ENG = { infantry = 40 } }                                    # battalions by type
+//     ships = { ENG = { lineship = 12 } }                                    # ships by type
+//     ideas = { ENG = { steady_growth = yes very_low_taxes = no } }          # on top of history: added / removed
+//     techs = { ENG = { tech_fish_fertilizer = yes } }                       # same
+//     include = "save_inputs_1857.txt"                                       # more of these keys, from another file
+//     difficulty = easy                                                      # adds diff_easy_player / diff_easy_ai
 //     semantics = { overflow = wrap32 mul_rounding = truncate div_by_zero = keep_target ... }
 // }
 
@@ -56,6 +61,10 @@ struct Scenario {
     };
     std::vector<ScopedValues> engine;
     std::vector<ScopedValues> units;
+    std::vector<ScopedValues> ships;
+    std::string difficulty;               // the game's setting: the engine applies the static diff_<this>_player / _ai
+    std::vector<ScopedValues> ideas;
+    std::vector<ScopedValues> techs;
     pdx::Semantics semantics;
 };
 

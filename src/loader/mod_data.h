@@ -68,11 +68,20 @@ struct ModData {
     // on_actions: file name -> parsed file (whitelisting happens in the simulation)
     std::vector<const pdx::ScriptFile*> on_action_files;
     std::vector<const pdx::ScriptFile*> event_files;
+    std::vector<const pdx::ScriptFile*> scripted_effect_files;
+    std::vector<const pdx::ScriptFile*> scripted_trigger_files;
     size_t parse_errors = 0;
 };
 
 // Loads definitions and indexes every scripted effect/trigger into `interp`.
 bool load_mod_data(const std::string& root, pdx::Interp& interp, ModData& out);
+
+// One name per line, `#` comments: data/game_effects.txt and data/game_triggers.txt (tools/gen_game_names.py).
+// Empty when the file is missing.
+std::unordered_set<Sym> load_name_list(const std::string& path);
+
+// Ideology groups (common/ideologies: `ideologies = { centrism = { ... } }`). Each is a trigger: `centrism > 0.01`.
+std::vector<Sym> load_ideology_groups(const std::string& root);
 
 // localisation/english/*.yml -> key -> text (`KEY:0 "text"`; later files win).
 void load_localisation(const std::string& root, std::unordered_map<std::string, std::string>& out);

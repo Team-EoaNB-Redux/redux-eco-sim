@@ -17,6 +17,26 @@ void ModifierEngine::install_hooks() {
     in_.hooks.refresh_dynamic_modifiers = [this](ScopeRef s) { refresh_dynamic(s); };
 }
 
+Fixed ModifierEngine::idea_stability_factor(const world::Country& co) const {
+    static const Sym s_factor = pdx::intern("stability_factor");
+    pdx::OpStatus os;
+    Fixed sum;
+    for (Sym idea : co.ideas) {
+        auto it = d_.idea_modifiers.find(idea);
+        if (it == d_.idea_modifiers.end()) continue;
+        for (const auto& e : it->second) {
+            if (e.name == s_factor) sum = Fixed::add(sum, e.value, in_.semantics(), os);
+        }
+    }
+    return sum;
+}
+
+void ModifierEngine::capture_stability_baseline() {
+    for (auto& co : w_.countries) co.stability_factor_at_start = idea_stability_factor(co);
+    stability_follows_ideas_ = true;
+    mark_all_dirty();
+}
+
 template <typename F>
 void ModifierEngine::for_static_sources(ScopeRef s, F&& fn) {
     static const Sym s_peace = pdx::intern("country_is_at_peace"), s_war = pdx::intern("country_is_at_war");
@@ -35,12 +55,21 @@ void ModifierEngine::for_static_sources(ScopeRef s, F&& fn) {
         auto it = d_.static_modifiers.find(stat);
         if (it != d_.static_modifiers.end()) fn("static " + pdx::sym_str(stat), it->second);
 
+        const Sym difficulty = co->is_ai ? w_.difficulty_ai : w_.difficulty_player;
+        auto dm = d_.static_modifiers.find(difficulty);
+        if (dm != d_.static_modifiers.end()) fn("static " + pdx::sym_str(difficulty), dm->second);
+
         // Engine: stability_good_modifier scales 0..1 over stability 50..100%, stability_bad_modifier over 50..0%.
         static const Sym s_good = pdx::intern("stability_good_modifier"), s_bad = pdx::intern("stability_bad_modifier");
         const pdx::Semantics& sem = in_.semantics();
         pdx::OpStatus os;
         const Fixed half = Fixed::from_raw(Fixed::SCALE / 2);
-        const Fixed over = Fixed::sub(co->stability, half, sem, os);
+        // Stability isn't simulated, but ideas move it: the scenario's value already holds those present at the start.
+        const Fixed since_start = stability_follows_ideas_ ? Fixed::sub(idea_stability_factor(*co), co->stability_factor_at_start, sem, os) : Fixed{};
+        Fixed stability = Fixed::add(co->stability, since_start, sem, os);
+        if (stability < Fixed{}) stability = Fixed{};
+        if (stability > Fixed::from_int(1)) stability = Fixed::from_int(1);
+        const Fixed over = Fixed::sub(stability, half, sem, os);
         if (!over.is_zero()) {
             const bool good = over > Fixed{};
             auto sm = d_.static_modifiers.find(good ? s_good : s_bad);

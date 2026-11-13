@@ -60,6 +60,7 @@ struct Country {
     std::unordered_map<Sym, int32_t> planes;
 
     Fixed stability = Fixed::from_raw(50000);   // 0.5
+    Fixed stability_factor_at_start;            // ideas' stability_factor when stability was last known (see modifiers.cpp)
     Fixed war_support = Fixed::from_raw(50000); // 0.5
     Fixed political_power;
     int32_t research_slots = 3;
@@ -107,6 +108,8 @@ public:
     std::vector<State> states; // indexed by state id
     Date date;
     Rng rng;
+    Sym difficulty_player = pdx::kNoSym; // static modifier the engine gives human countries
+    Sym difficulty_ai = pdx::kNoSym;
 
     // ---- lookups ----
     int32_t country_index(Sym tag) const {

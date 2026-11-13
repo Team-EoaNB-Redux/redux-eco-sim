@@ -52,6 +52,32 @@ struct MakeSubject : EffectOp {
     }
 };
 
+// ---- declare_war_on: both sides are at war. Allies aren't pulled in, and fighting isn't simulated ----
+
+struct DeclareWar : EffectOp {
+    Operand target;
+    void run(Ctx& c) const override {
+        const ScopeRef self = c.self();
+        const ScopeRef t = c.in.eval(c, target, loc).as_scope();
+        world::Country* attacker = self.is_country() ? c.w.country(self.id) : nullptr;
+        world::Country* defender = t.is_country() ? c.w.country(t.id) : nullptr;
+        if (!attacker || !defender || attacker == defender) return;
+        attacker->at_war_with.insert(defender->index);
+        defender->at_war_with.insert(attacker->index);
+        if (c.in.hooks.modifiers_dirty) {
+            c.in.hooks.modifiers_dirty(self);
+            c.in.hooks.modifiers_dirty(t);
+        }
+    }
+};
+
+std::unique_ptr<EffectOp> make_declare_war(Interp& in, const ScriptFile& f, const Node& n) {
+    auto e = std::make_unique<DeclareWar>();
+    const Node* t = n.is_block ? bi::find_child(f, n, "target") : &n;
+    if (!t || !in.compile_operand(f, *t, e->target)) return nullptr;
+    return e;
+}
+
 std::unique_ptr<EffectOp> make_set_autonomy(Interp& in, const ScriptFile& f, const Node& n) {
     auto e = std::make_unique<MakeSubject>();
     const Node* t = n.is_block ? bi::find_child(f, n, "target") : &n;
@@ -156,6 +182,7 @@ std::unique_ptr<EffectOp> make_add_timed_idea(Interp& in, const ScriptFile& f, c
 
 void register_effects_stubs(Registry& r) {
     r.effect("set_autonomy", make_set_autonomy);
+    r.effect("declare_war_on", make_declare_war);
     r.effect("puppet", make_puppet);
     r.effect("end_puppet", make_end_puppet);
     r.effect("release_puppet", make_end_puppet);
@@ -174,7 +201,7 @@ void register_effects_stubs(Registry& r) {
              "add_equipment_production", "give_military_access", "activate_targeted_decision", "activate_decision",
              "set_truce", "diplomatic_relation", "set_sub_doctrine", "set_fuel_ratio", "starting_train_buffer",
              "add_named_threat", "add_manpower", "set_rule", "add_to_faction", "create_faction", "create_wargoal",
-             "declare_war_on", "white_peace", "add_claim_by", "remove_claim_by", "set_province_controller",
+             "white_peace", "add_claim_by", "remove_claim_by", "set_province_controller",
              "add_country_leader_trait", "remove_country_leader_trait", "add_country_leader_role", "set_country_leader_ideology",
              "promote_character", "add_command_power", "add_offsite_building", "add_doctrine_cost_reduction",
              "add_tech_bonus", "add_ai_strategy", "mark_focus_tree_layout_dirty", "set_occupation_law",

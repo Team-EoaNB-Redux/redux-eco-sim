@@ -285,9 +285,13 @@ struct Log : EffectOp {
     }
 };
 
-std::unique_ptr<EffectOp> log_effect(Interp&, const ScriptFile&, const Node& n) {
+std::unique_ptr<EffectOp> log_effect(Interp& in, const ScriptFile& f, const Node& n) {
     auto e = std::make_unique<Log>();
     e->text = sym_str(n.value);
+    if (!n.is_block && e->text.empty()) { // In-game: "Not a valid value", a load error (Interp::find_load_errors)
+        in.diag(DiagKind::BadParameter, in.loc(f, n), "log = \"\" is a load error in-game (\"Not a valid value\")");
+        in.note_load_error(in.loc(f, n), "log = \"\" (\"Not a valid value\")");
+    }
     return e;
 }
 

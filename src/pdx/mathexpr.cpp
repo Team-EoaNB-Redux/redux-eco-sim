@@ -55,6 +55,20 @@ bool lookup(std::string_view key, MK& out) {
 
 bool compile_ops(Interp& in, const ScriptFile& f, const Node& block, std::vector<MathOp>& out, MathExpr& root);
 
+bool compile_math_operand(Interp& in, const ScriptFile& f, const Node& n, Operand& out) {
+    if (!in.compile_operand(f, n, out)) return false;
+    if (out.type == Operand::Type::Ref && (out.ref.index.kind == IndexKind::Var || out.ref.index.kind == IndexKind::Int)) {
+        in.diag(DiagKind::MathArrayRead, in.loc(f, n),
+                "'" + out.ref.text + "' in a math expression: fine in ticks, 0 from the console. Stage it into a temp");
+        if (in.semantics().math_array_read_is_zero) {
+            out = Operand{};
+            out.type = Operand::Type::Literal;
+            out.literal = Value::number(Fixed{});
+        }
+    }
+    return true;
+}
+
 bool compile_one(Interp& in, const ScriptFile& f, const Node* n, const Node* end, const Node*& consumed,
                  std::vector<MathOp>& out, MathExpr& root) {
     static const Sym s_else_if = intern("else_if"), s_else = intern("else"), s_limit = intern("limit"),
@@ -87,8 +101,12 @@ bool compile_one(Interp& in, const ScriptFile& f, const Node* n, const Node* end
                 in.diag(DiagKind::MathExprError, in.loc(f, *b), "clamp accepts only min/max");
                 return false;
             }
+            if (b == f.begin(*n) && b->key != s_min) {
+                in.diag(DiagKind::MathExprError, in.loc(f, *b), "clamp takes min before max (in-game: \"Expected 'min' as argument 1\")");
+                return false;
+            }
             Operand bound;
-            if (!in.compile_operand(f, *b, bound)) return false;
+            if (!compile_math_operand(in, f, *b, bound)) return false;
             op.bounds.emplace_back(b->key == s_min, std::move(bound));
         }
         break;
@@ -121,7 +139,7 @@ bool compile_one(Interp& in, const ScriptFile& f, const Node* n, const Node* end
         break;
     }
     default:
-        if (!in.compile_operand(f, *n, op.arg)) {
+        if (!compile_math_operand(in, f, *n, op.arg)) {
             in.diag(DiagKind::MathExprError, l, "bad argument for '" + sym_str(n->key) + "'");
             return false;
         }
@@ -219,7 +237,8 @@ Fixed apply_one(Ctx& c, const MathOp& op, Fixed acc) {
                 acc = acc > b ? b : acc;
             }
         }
-        if (has_min && has_max && lo > hi) return Fixed{}; // probe clamp_max_then_min: 7 clamped to max 5, min 6 = 0
+        // Unprobed: min above max. Probe clamp_max_then_min read 0 only because the game rejects max before min at load
+        if (has_min && has_max && lo > hi) return Fixed{};
         return acc;
     }
     case MK::Gt: return b2f(acc > arg());
@@ -253,11 +272,28 @@ Fixed apply_ops(Ctx& c, const std::vector<MathOp>& ops, Fixed acc) {
 } // namespace
 
 std::shared_ptr<MathExpr> compile_math(Interp& in, const ScriptFile& f, const Node& block) {
+    static int depth = 0; // Nested blocks (add = { ... }, if limits) belong to the outermost expression
     auto e = std::make_shared<MathExpr>();
     e->loc = in.loc(f, block);
-    if (!compile_ops(in, f, block, e->ops, *e)) {
+    if (depth == 0) {
+        if (in.in_load_pass()) {
+            in.note_math_expr(e->loc);
+        } else if (const uint32_t bad = in.load_error_line(f.file_id); bad != 0 && block.line > bad) {
+            // Interp::find_load_errors: after a file's first load error, the game reads every later math expression as 0
+            in.diag(DiagKind::MathExprError, e->loc,
+                    "reads 0 in-game: this file's load error at line " + std::to_string(bad) + " (" +
+                        in.load_error_reason(f.file_id) + ") comes before it");
+            e->failed = true;
+            return e;
+        }
+    }
+    ++depth;
+    const bool ok = compile_ops(in, f, block, e->ops, *e);
+    --depth;
+    if (!ok) {
         e->failed = true;
         e->ops.clear();
+        in.note_load_error(e->loc, "a math expression the game rejects");
     }
     return e;
 }

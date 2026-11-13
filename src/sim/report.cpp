@@ -169,6 +169,18 @@ bool write_run_outputs(const std::string& dir, Simulation& s, const Recorder& r,
         js << "]\n";
     }
 
+    // ---- profile.csv: every scripted effect (the report lists only the top 25) ----
+    if (!s.interp().profile.empty()) {
+        std::vector<std::pair<pdx::Sym, pdx::Interp::CallStats>> prof(s.interp().profile.begin(), s.interp().profile.end());
+        std::sort(prof.begin(), prof.end(), [](const auto& a, const auto& b) { return a.second.inclusive_seconds > b.second.inclusive_seconds; });
+        std::ofstream pc(fs::path(dir) / "profile.csv");
+        pc << "effect,calls,inclusive_s,ms_per_call\n";
+        for (const auto& [name, st] : prof) {
+            pc << pdx::sym_str(name) << "," << st.calls << "," << fmt(st.inclusive_seconds) << ","
+               << fmt(st.calls ? st.inclusive_seconds * 1000.0 / static_cast<double>(st.calls) : 0) << "\n";
+        }
+    }
+
     // ---- report.md ----
     std::ofstream md(fs::path(dir) / "report.md");
     const auto& sc = s.scenario();

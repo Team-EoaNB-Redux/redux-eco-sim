@@ -45,6 +45,10 @@ bool apply_semantics(const ScriptFile& f, const Node& block, pdx::Semantics& s, 
             s.check_shorthand_allows_le_ge = yes(*c);
         } else if (k == "monthly_before_weekly") {
             s.monthly_before_weekly = yes(*c);
+        } else if (k == "math_array_read_is_zero") {
+            s.math_array_read_is_zero = yes(*c);
+        } else if (k == "math_in_trigger_is_zero") {
+            s.math_in_trigger_is_zero = yes(*c);
         } else if (k == "max_effect_iterations" || k == "text_default_decimals" || k == "max_call_depth") {
             pdx::Fixed n;
             pdx::Fixed::parse(v, n);
@@ -84,6 +88,9 @@ bool apply_semantics_text(const std::string& text, pdx::Semantics& s, std::strin
     return apply_semantics(f, *f.root_begin(), s, error);
 }
 
+static bool read_scenario_keys(const ScriptFile& f, const Node* first, const Node* last, const std::string& path, Scenario& out,
+                               std::string& error);
+
 bool load_scenario(const std::string& path, Scenario& out, std::string& error) {
     ScriptFile f;
     if (!pdx::parse_file(path, f)) {
@@ -103,9 +110,29 @@ bool load_scenario(const std::string& path, Scenario& out, std::string& error) {
         return false;
     }
     out.path = path;
-    for (const Node* c = f.begin(*root); c != f.end(*root); ++c) {
+    return read_scenario_keys(f, f.begin(*root), f.end(*root), path, out, error);
+}
+
+bool read_scenario_keys(const ScriptFile& f, const Node* first, const Node* last, const std::string& path, Scenario& out,
+                        std::string& error) {
+    for (const Node* c = first; c != last; ++c) {
         const std::string_view k = sym_view(c->key);
         if (k == "name") out.name = sym_str(c->value);
+        else if (k == "include") {
+            // Generated data (see tools/import_save_inputs.py): scenario keys at the top level of another file.
+            std::filesystem::path p(sym_str(c->value));
+            if (p.is_relative()) p = std::filesystem::path(path).parent_path() / p;
+            ScriptFile inc;
+            if (!pdx::parse_file(p.string(), inc)) {
+                error = path + ": cannot read include " + p.string();
+                return false;
+            }
+            if (!inc.errors.empty()) {
+                error = p.string() + ":" + std::to_string(inc.errors[0].line) + ": " + inc.errors[0].message;
+                return false;
+            }
+            if (!read_scenario_keys(inc, inc.root_begin(), inc.root_end(), p.string(), out, error)) return false;
+        }
         else if (k == "start_date") {
             if (!world::Date::parse(sym_view(c->value), out.start_date)) {
                 error = "bad start_date";
@@ -147,6 +174,10 @@ bool load_scenario(const std::string& path, Scenario& out, std::string& error) {
         } else if (k == "state_owner") out.state_owner = c->value;
         else if (k == "engine") scoped_values(f, *c, out.engine);
         else if (k == "units") scoped_values(f, *c, out.units);
+        else if (k == "ships") scoped_values(f, *c, out.ships);
+        else if (k == "difficulty") out.difficulty = sym_str(c->value);
+        else if (k == "ideas") scoped_values(f, *c, out.ideas);
+        else if (k == "techs") scoped_values(f, *c, out.techs);
         else if (k == "semantics") {
             if (!apply_semantics(f, *c, out.semantics, error)) return false;
         } else {

@@ -1,0 +1,106 @@
+# M02 pops and labour: the five classes, bureaucrats, administrative capacity, qualifications, active manpower and slaves.
+# The refs shared with watches/m02_base.txt (ENG totals, wages, test industries, prices) compare directly against runs/m02_base.
+global.month
+ENG.gdp_amount
+ENG.treasury
+ENG.net_budget
+ENG.revenue
+ENG.income_tax_revenue
+ENG.administration_spending
+ENG.military_payroll_spending
+ENG.pops
+ENG.pops_workforce
+ENG.pops_employed
+ENG.pops_unemployed
+ENG.pops_earnings
+ENG.pops_earnings_avg
+# ENG: bureaucracy and active manpower
+ENG.bureaucratic_jobs_required
+ENG.bureaucrats_employed
+ENG.bureaucrats_payroll
+ENG.administrative_capacity
+ENG.active_manpower_k
+ENG.active_manpower
+ENG.pops_workforce@token:peasants
+ENG.pops_workforce@token:working_class
+ENG.pops_workforce@token:middle_class
+ENG.pops_workforce@token:upper_class
+# London (952): wage, labour market, and every class
+952.base_wage
+952.labor_utilization
+952.industrial_workforce
+952.industrial_jobs_available
+952.pops_workforce
+952.pops_employed
+952.pops_unemployed
+952.pops_earnings
+952.pops_workforce@token:peasants
+952.pops_workforce@token:working_class
+952.pops_workforce@token:middle_class
+952.pops_workforce@token:upper_class
+952.pops_jobs_available@token:middle_class
+952.pops_jobs_available@token:upper_class
+952.active_manpower
+952.bureaucratic_jobs
+952.bureaucrats_employed
+952.bureaucratic_jobs_upper
+952.qualifications
+952.pops_sol@token:peasants
+952.pops_sol@token:working_class
+952.pops_sol@token:middle_class
+952.pops_sol@token:upper_class
+952.pops_earnings@token:upper_class
+952.pops_dividends@token:upper_class
+# The other test states
+132.base_wage
+132.labor_utilization
+132.pops_workforce@token:peasants
+132.pops_workforce@token:working_class
+132.pops_workforce@token:middle_class
+132.qualifications
+128.base_wage
+128.labor_utilization
+128.pops_workforce@token:peasants
+128.pops_workforce@token:working_class
+128.pops_workforce@token:middle_class
+128.qualifications
+125.base_wage
+125.pops_workforce@token:peasants
+125.pops_workforce@token:working_class
+122.base_wage
+122.pops_workforce@token:peasants
+122.pops_workforce@token:working_class
+# Rural states with only bureaucrats in the middle class: their wage should hold
+1007.base_wage
+1007.labor_utilization
+1007.pops_workforce@token:middle_class
+1.base_wage
+# Slaves (test shares in Virginia, South Carolina and Mississippi)
+USA.administrative_capacity
+USA.active_manpower_k
+362.pops_workforce@token:slaves
+362.pops_employed@token:slaves
+362.pops_workforce@token:working_class
+362.slave_labor_share
+362.base_wage
+362.labor_utilization
+364.pops_workforce@token:slaves
+364.pops_workforce@token:working_class
+364.base_wage
+370.pops_workforce@token:slaves
+370.pops_workforce
+# Test industries
+132.employed@token:textile_mill
+128.employed@token:steel_foundry
+128.employed@token:tooling_workshop
+952.employed@token:urban_center
+952.employed@token:consumer_goods_factory
+952.employment_target@token:consumer_goods_factory
+125.employed@token:crop_farm
+# Prices
+ENG.price@token:food
+ENG.price@token:consumer_goods
+ENG.price@token:services
+ENG.price@token:textiles
+ENG.price@token:steel
+FRA.price@token:food

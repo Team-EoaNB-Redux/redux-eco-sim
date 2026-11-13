@@ -1,0 +1,88 @@
+# M01 gradual prices: ENG's market prices (actual and target), its world prices, trade volumes,
+# and the test industries that respond to them (toi/history/states, "# >>> rework test industries")
+global.month
+# ENG
+ENG.gdp_amount
+ENG.treasury
+ENG.net_budget
+ENG.revenue
+ENG.trade_value
+ENG.tariff_revenue
+# Test industries: workers employed (K), first output, employment target
+132.employed@token:textile_mill
+132.production@token:textile_mill^0
+132.employment_target@token:textile_mill
+132.employed@token:coal
+128.employed@token:steel_foundry
+128.production@token:steel_foundry^0
+128.employment_target@token:steel_foundry
+128.employed@token:tooling_workshop
+128.employment_target@token:tooling_workshop
+128.employed@token:iron
+952.employed@token:urban_center
+952.employed@token:consumer_goods_factory
+952.employment_target@token:consumer_goods_factory
+125.employed@token:crop_farm
+125.employed@token:livestock_ranch
+122.employed@token:coal
+122.employed@token:iron
+# Market prices: actual (what money uses) and target (supply and demand, recomputed weekly)
+ENG.price@token:textiles
+ENG.target_price@token:textiles
+ENG.price@token:steel
+ENG.target_price@token:steel
+ENG.price@token:tools
+ENG.target_price@token:tools
+ENG.price@token:consumer_goods
+ENG.target_price@token:consumer_goods
+ENG.price@token:services
+ENG.target_price@token:services
+ENG.price@token:coal
+ENG.target_price@token:coal
+ENG.price@token:iron
+ENG.target_price@token:iron
+ENG.price@token:food
+ENG.target_price@token:food
+ENG.price@token:fiber
+ENG.target_price@token:fiber
+ENG.price@token:wood
+ENG.target_price@token:wood
+# A member's copy and a state's copy of the market price
+952.price@token:steel
+# World prices as ENG sees them: actual and target
+ENG.global_market_price@token:textiles
+ENG.global_market_target_price@token:textiles
+ENG.global_market_price@token:steel
+ENG.global_market_target_price@token:steel
+ENG.global_market_price@token:tools
+ENG.global_market_target_price@token:tools
+ENG.global_market_price@token:consumer_goods
+ENG.global_market_target_price@token:consumer_goods
+ENG.global_market_price@token:coal
+ENG.global_market_target_price@token:coal
+ENG.global_market_price@token:food
+ENG.global_market_target_price@token:food
+ENG.global_market_price@token:fiber
+ENG.global_market_target_price@token:fiber
+# Trade volumes (+ import, - export)
+ENG.trade@token:textiles
+ENG.trade@token:steel
+ENG.trade@token:tools
+ENG.trade@token:consumer_goods
+ENG.trade@token:coal
+ENG.trade@token:iron
+ENG.trade@token:food
+ENG.trade@token:fiber
+ENG.trade@token:wood
+# Another market leader, for prices outside ENG's market
+FRA.price@token:food
+FRA.price@token:textiles
+FRA.price@token:steel
+FRA.price@token:consumer_goods
+# Pops' standard of living (pops_base_spending)
+952.pops_sol@token:peasants
+952.pops_sol@token:laborers
+952.pops_sol@token:workers
+1007.pops_sol@token:peasants
+1007.pops_sol@token:laborers
+1.pops_sol@token:peasants

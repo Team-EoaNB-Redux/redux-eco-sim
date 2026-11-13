@@ -36,14 +36,16 @@ struct VarEffect : EffectOp {
             in.slot_set(c, slot, Value::number(Fixed::round_half_away(in.slot_get(slot).num)), loc);
             return;
         case VarOp::Clamp: {
+            // Max first, then min, so min wins when the bounds cross, in whichever order they're written: probe
+            // clamp_effect_crossed_min_first, and pops_handle_savings in Strat's 1857.6.1 autosave (docs/SEMANTICS.md)
             Fixed v = in.slot_get(slot).num;
-            if (has_min) {
-                const Fixed lo = in.eval(c, min, loc).num;
-                if (v < lo) v = lo;
-            }
             if (has_max) {
                 const Fixed hi = in.eval(c, max, loc).num;
                 if (v > hi) v = hi;
+            }
+            if (has_min) {
+                const Fixed lo = in.eval(c, min, loc).num;
+                if (v < lo) v = lo;
             }
             in.slot_set(c, slot, Value::number(v), loc);
             return;

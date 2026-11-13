@@ -25,6 +25,9 @@ const char* diag_kind_name(DiagKind k) {
     case DiagKind::TokenExpected: return "token_expected";
     case DiagKind::UnsetTempRead: return "unset_temp_read";
     case DiagKind::MathExprError: return "math_expr_error";
+    case DiagKind::MathArrayRead: return "math_array_read";
+    case DiagKind::MathInTrigger: return "math_in_trigger";
+    case DiagKind::LoadError: return "load_error";
     case DiagKind::MetaEffectError: return "meta_effect_error";
     case DiagKind::UndefinedModifier: return "undefined_modifier";
     case DiagKind::AmbiguousAtTarget: return "ambiguous_at_target";
@@ -45,9 +48,12 @@ Severity diag_default_severity(DiagKind k) {
     case DiagKind::UnknownTrigger:
     case DiagKind::UnsupportedBuiltin:
     case DiagKind::MathExprError:
+    case DiagKind::LoadError:
     case DiagKind::MetaEffectError:
     case DiagKind::RecursionLimit:
         return Severity::Error;
+    case DiagKind::MathArrayRead:
+    case DiagKind::MathInTrigger:
     case DiagKind::UnknownScriptedEffect:
     case DiagKind::BadParameter:
     case DiagKind::Overflow:

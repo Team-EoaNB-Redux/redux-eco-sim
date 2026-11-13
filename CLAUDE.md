@@ -42,7 +42,9 @@ Godot 4.5.1: `C:\Users\white\Documents\Godot\Godot_v4.5.1-stable_win64_console.e
    `bin\ecosim_cli.exe effect --after-months 1 --scope ENG "log = \"[?treasury|0] [?market_leader.GetTag]\""`
    (scopes: tag, state id, `global`; `log` supports `[?ref|N]`, `|%`, `.GetTokenKey`, `[THIS.GetName]`).
    Monthly series without a recorded run: `run --months 6 --watch ENG.gdp_amount --watch 952.base_wage`.
-4. Whole world instead of the ENG subset: `--scenario scenarios\world_1857.txt` (~4.5 s/month). The subset fakes
+4. **`--scenario scenarios\world_1857_eng.txt` is the faithful one** (~3 s/month): the whole world, ENG as the player, real
+   armies, default laws, wars and difficulty. As of 2026-10-31 it matches in-game ENG GDP to 0.5% at startup and June 1. Use it for
+   balance and for anything compared with a save. `world_1857.txt` is the same with ENG run by the AI. The ENG subset fakes
    the rest of the world with scenario `pins` (ENG's startup trade held fixed), so its startup matches the game
    but trade-driven prices drift over long runs; use the world scenario for multi-year balance questions.
    `scenarios\british_isles.txt` is a fantasy closed economy: its 19 states are all owned by ENG, with no trade
@@ -50,19 +52,32 @@ Godot 4.5.1: `C:\Users\white\Documents\Godot\Godot_v4.5.1-stable_win64_console.e
    states always load, because UCT hosts the ticks. As of 2026-10-30 it collapses within a year: food starts
    at its price cap without imports.
    Fantasy history sets: scenario key `history = "../fantasy/<name>"` replaces toi/history (see fantasy/README.md).
-5. Game parity (debug effects in `toi/common/scripted_effects/_economy_sim_probes.txt`): after Strat runs
+5. **Real in-game state:** `python tools/read_save.py` reads scripted variables out of Strat's newest save (`--country ENG`,
+   `--state 952`, `--var ENG.gdp_amount`, `--json all.json`). Check here first: no in-game step is needed, and it shows what
+   the game actually computed. A console probe can differ from a tick (docs/SEMANTICS.md).
+   Whole-state diff: `run --scenario scenarios\world_1857_eng.txt --months 1 --dump-json sim.json`, then
+   `python tools/compare_save.py --save <save> --sim sim.json` (`--scope ENG`, `--var gdp_amount`, `--grep "^price"`). Missing names
+   read 0: saves leave out zeros. `tools/import_save_inputs.py` regenerates `scenarios/save_inputs_1857.txt`, the inputs the sim
+   can't work out itself: rerun it when history changes.
+   Game parity (debug effects in `toi/common/scripted_effects/_economy_sim_probes.txt`): after Strat runs
    `effect eco_sim_parity_dump = yes` / `effect eco_sim_probes = yes` in-game, `bin\ecosim_cli.exe parity`
    and `bin\ecosim_cli.exe calibrate` diff game.log against the sim. Fix the largest early divergence first.
-6. `check --parse-only` parses all ~5100 mod files (<1 s) and lists real brace/syntax errors.
+6. PM data is generated, not hand-written: edit `toi/documentation/Planning/EoaNBR Economy.xlsx`, run `python toi/documentation/scripts/generate_pm_data.py`, then `python -B toi/documentation/scripts/verify_pm_audit.py` (needs `bin/ecosim_cli.exe`).
+7. `check --parse-only` parses all ~5100 mod files (<1 s) and lists real brace/syntax errors.
 
 Refs (everywhere: CLI, UI, watch files) are HOI4 variable references with a scope prefix:
-`ENG.treasury`, `952.base_wage`, `global.base_price@token:steel`, `ENG.pops@token:laborers`,
+`ENG.treasury`, `952.base_wage`, `global.base_price@token:steel`, `ENG.pops@token:working_class`,
 `ENG.market_leader:price@token:food`, `ENG.modifier@incentives_modifier`, `ENG.industries^num`.
 
 ## Reading diagnostics (what the game hides)
 error: `unknown_effect` / `unknown_trigger` (evaluates false) / `math_expr_error` (in-game the whole
-expression silently becomes 0) / `meta_effect_error` / `parse_error`.
-warning: `unknown_scripted_effect` (called but defined nowhere), `overflow` (left ±2^31, wrapped),
+expression silently becomes 0) / `load_error` (the game rejects this line at load, and every later math expression
+in the file reads 0: in-game `error.log` says "Errors occurred while reading math expression defaulting to 0") /
+`meta_effect_error` / `parse_error`. `load_error` comes from a startup pass over every scripted effects and triggers
+file. It tells real HOI4 names from typos with `data/game_effects.txt` and `data/game_triggers.txt`. Regenerate them
+with `python tools/gen_game_names.py` after a game update.
+warning: `math_array_read` (`arr^i` in a math expression) and `math_in_trigger` (math in a trigger block): both fine in ticks
+but 0 from the console, so keep them out of eco script. `unknown_scripted_effect` (called but defined nowhere), `overflow` (left ±2^31, wrapped),
 `div_by_zero`, `loop_cap` (1000 iterations), `invalid_scope`, `array_index` (read/write past the end —
 HOI4 elements must exist before being written), `token_expected`, `event_not_loaded`.
 lint: `scope_unset` (a scope var holds 0 → block skipped), `temp_with_scope` (`*_temp_*` effect on a

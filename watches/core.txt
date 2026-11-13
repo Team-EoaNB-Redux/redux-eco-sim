@@ -22,8 +22,12 @@ ENG.price@token:services
 952.gdp_amount
 952.base_wage
 952.labor_utilization
-952.pops@token:laborers
-952.pops_unemployed@token:laborers
+952.infrastructure_efficiency
+952.industrial_capacity
+952.industrial_capacity_use
+952.price_industrial_capacity
+952.pops@token:working_class
+952.pops_unemployed@token:working_class
 952.pops_sol
 128.gdp_amount
 128.base_wage

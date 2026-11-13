@@ -33,6 +33,9 @@ enum class DiagKind : uint8_t {
     TokenExpected,          // @var: target holds a plain number where a token was expected
     UnsetTempRead,          // lint: temp read before being set in this execution
     MathExprError,          // in-game this silently evaluates to 0
+    MathArrayRead,          // arr^i in a math expression: fine in ticks, 0 from the console. Stage it into a temp
+    MathInTrigger,          // math expression in a trigger block: fine in ticks, 0 from the console
+    LoadError,              // the game rejects this line at load, and every math expression after it in the file reads 0
     MetaEffectError,
     UndefinedModifier,      // modifier@x for an x no definition provides
     AmbiguousAtTarget,      // x@bare_identifier

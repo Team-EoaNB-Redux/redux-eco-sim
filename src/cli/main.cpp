@@ -29,6 +29,8 @@ int print_help() {
               << "         and the values of --print refs (e.g. --print ENG.treasury --print 952.base_wage)\n"
               << "  run    ... --out runs/<name> [--watch-file watches/core.txt] [--set ref=value]...\n"
               << "         recorded run: writes report.md (read this first), series.csv, diagnostics.json, sim.log\n"
+              << "  run    ... --dump-json <file>\n"
+              << "         after the last month, write every variable and array, keyed like tools/read_save.py --json\n"
               << "  compare <run dir A> <run dir B>\n"
               << "         A/B diff of two recorded runs (final values, % change, first divergent month)\n"
               << "  calibrate [game.log]   compare in-game EOPROBE lines (effect eco_sim_probes = yes) with the sim\n"
@@ -157,6 +159,93 @@ bool boot(const cli::Args& args, sim::Simulation& s) {
     return true;
 }
 
+// Every variable and array in the world as JSON, keyed like tools/read_save.py: {scope: {name@target^i: value}}, so a
+// sim state can be diffed against a real save. Tokens are written by name, countries by tag, states as "state:id".
+std::string json_key(const world::VarKey k, const world::World& w) {
+    std::string name = pdx::sym_str(world::key_name(k));
+    const uint32_t code = world::key_target(k);
+    if (code == 0) return name;
+    const uint32_t kind = code >> 30, payload = code & ((1u << 30) - 1u);
+    if (kind == 1) return name + "@" + pdx::sym_str(static_cast<pdx::Sym>(payload));
+    if (kind == 2) {
+        const auto* c = w.country(static_cast<int32_t>(payload));
+        return name + "@" + (c ? pdx::sym_str(c->tag) : std::to_string(payload));
+    }
+    return name + "@" + std::to_string(payload);
+}
+
+std::string json_value(const pdx::Value& v, const world::World& w) {
+    switch (v.kind) {
+    case pdx::Kind::Token: return "\"" + pdx::sym_str(v.token_sym()) + "\"";
+    case pdx::Kind::Country: {
+        const auto* c = w.country(v.ref);
+        return "\"" + (c ? pdx::sym_str(c->tag) : std::string("?")) + "\"";
+    }
+    case pdx::Kind::State: return "\"state:" + std::to_string(v.ref) + "\"";
+    default: return v.num.to_string_exact();
+    }
+}
+
+void write_scope_json(std::ostream& out, const std::string& scope, const world::VarStore& vars, const world::World& w, bool& first) {
+    out << (first ? "" : ",\n") << "\"" << scope << "\":{";
+    first = false;
+    bool first_var = true;
+    auto put = [&](const std::string& key, const std::string& value) {
+        out << (first_var ? "" : ",\n") << "\"" << key << "\":" << value;
+        first_var = false;
+    };
+    for (const auto& [k, v] : vars.vars()) put(json_key(k, w), json_value(v, w));
+    for (const auto& [k, a] : vars.arrays()) {
+        const std::string name = json_key(k, w);
+        put(name + "^num", std::to_string(a.size()));
+        for (size_t i = 0; i < a.size(); ++i) put(name + "^" + std::to_string(i), json_value(a[i], w));
+    }
+    out << "}";
+}
+
+bool write_state_json(sim::Simulation& s, const std::string& path) {
+    std::ofstream out(path);
+    if (!out) return false;
+    const world::World& w = s.world();
+    out << "{";
+    bool first = true;
+    write_scope_json(out, "global", w.global_vars, w, first);
+    for (const int32_t ci : w.existing_countries()) {
+        write_scope_json(out, pdx::sym_str(w.country(ci)->tag), w.country(ci)->vars, w, first);
+    }
+    for (const int32_t id : w.existing_states()) {
+        write_scope_json(out, std::to_string(id), w.state(id)->vars, w, first);
+    }
+    out << ",\n\"controllers\":{";
+    bool first_state = true;
+    for (const int32_t id : w.existing_states()) {
+        const auto* c = w.country(w.state(id)->controller);
+        out << (first_state ? "" : ",") << "\"" << id << "\":\"" << (c ? pdx::sym_str(c->tag) : std::string()) << "\"";
+        first_state = false;
+    }
+    out << "}";
+    // Each country's ideas and techs, to diff against the strings in a save.
+    auto names = [&](const char* key, auto list_of) {
+        out << ",\n\"" << key << "\":{";
+        bool first_country = true;
+        for (const int32_t ci : w.existing_countries()) {
+            out << (first_country ? "" : ",\n") << "\"" << pdx::sym_str(w.country(ci)->tag) << "\":[";
+            bool first_name = true;
+            for (const pdx::Sym n : list_of(*w.country(ci))) {
+                out << (first_name ? "" : ",") << "\"" << pdx::sym_str(n) << "\"";
+                first_name = false;
+            }
+            out << "]";
+            first_country = false;
+        }
+        out << "}";
+    };
+    names("ideas", [](const world::Country& c) { return c.ideas; });
+    names("techs", [](const world::Country& c) { return c.tech_order; });
+    out << "}\n";
+    return true;
+}
+
 void print_refs(sim::Simulation& s, const cli::Args& args) {
     for (const auto& ref : args.all("print")) {
         pdx::Value v;
@@ -221,6 +310,10 @@ int cmd_run(const cli::Args& args) {
         s.on_month = row;
     }
     s.run_months(months);
+    if (args.has("dump-json") && !write_state_json(s, args.get("dump-json"))) {
+        std::cerr << "error: cannot write " << args.get("dump-json") << "\n";
+        return 2;
+    }
     const auto& w = s.world();
     std::cout << "scenario: " << s.scenario().name << " | date " << w.date.to_string() << " | " << s.months_elapsed()
               << " months\n"
