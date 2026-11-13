@@ -1,0 +1,12 @@
+[configuration]
+
+entry_symbol = "redux_eco_sim_init"
+compatibility_minimum = "4.1"
+reloadable = false
+
+[libraries]
+; Built by `scons` at the repo root (redux-eco-sim/), installed here by the SConstruct.
+windows.debug.x86_64 = "./windows/redux_eco_sim.windows.template_debug.x86_64.dll"
+windows.release.x86_64 = "./windows/redux_eco_sim.windows.template_release.x86_64.dll"
+linux.debug.x86_64 = "./linux/libredux_eco_sim.linux.template_debug.x86_64.so"
+linux.release.x86_64 = "./linux/libredux_eco_sim.linux.template_release.x86_64.so"
